@@ -1,0 +1,35 @@
+name: Link Auth Session Fix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/link-auth-session-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link auth repair
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./assets/js/auth-session-fix.js?v=20260729-1"></script>'
+          if tag not in s:
+              s=s.replace('</body>',tag+'\n</body>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/link-auth-session-fix.yml
+          git add index.html .github/workflows/link-auth-session-fix.yml
+          git commit -m "Link persistent auth session repair"
+          git push
