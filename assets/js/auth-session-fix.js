@@ -13,13 +13,18 @@
     }
   });
 
-  function loadAdminLiveUpgrade(){
-    if(document.querySelector('script[data-earn-chat-admin-live]')) return;
+  function loadRuntimeScript(src, dataKey){
+    if(document.querySelector('script[' + dataKey + ']')) return;
     var script=document.createElement('script');
-    script.src='./assets/js/admin-live-upgrade.js?v=20260729-1';
+    script.src=src;
     script.async=false;
-    script.dataset.earnChatAdminLive='1';
+    script.setAttribute(dataKey,'1');
     document.head.appendChild(script);
+  }
+
+  function loadRuntimeUpgrades(){
+    loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
+    loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
   }
 
   async function restoreEarnChatSession(){
@@ -60,7 +65,7 @@
     try{ window.saveState(); }catch(error){}
   });
 
-  loadAdminLiveUpgrade();
+  loadRuntimeUpgrades();
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', restoreEarnChatSession, {once:true});
