@@ -13,6 +13,15 @@
     }
   });
 
+  function loadAdminLiveUpgrade(){
+    if(document.querySelector('script[data-earn-chat-admin-live]')) return;
+    var script=document.createElement('script');
+    script.src='./assets/js/admin-live-upgrade.js?v=20260729-1';
+    script.async=false;
+    script.dataset.earnChatAdminLive='1';
+    document.head.appendChild(script);
+  }
+
   async function restoreEarnChatSession(){
     try{
       var result = await window._supa.auth.getSession();
@@ -50,6 +59,8 @@
     window.S.email = session.user.email || window.S.email || '';
     try{ window.saveState(); }catch(error){}
   });
+
+  loadAdminLiveUpgrade();
 
   if(document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', restoreEarnChatSession, {once:true});
