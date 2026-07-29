@@ -16,7 +16,8 @@
   function shareAmount(){
     var amount = Number((window.S && (S.chatEarned || S.pendingUnlock || S.balance)) || 0);
     if(typeof window.fmt === 'function') return window.fmt(amount);
-    return '₦' + Math.floor(amount).toLocaleString('en-NG');
+    var isKenya = typeof window.activeCountryCode === 'function' && window.activeCountryCode() === 'KE';
+    return (isKenya ? 'KSh ' : '₦') + Math.floor(amount).toLocaleString(isKenya ? 'en-KE' : 'en-NG');
   }
 
   function joinUrl(){
@@ -33,17 +34,17 @@
   }
 
   function message(){
-    var country = (typeof window.activeCountry === 'function') ? window.activeCountry() : {name:'Nigeria'};
+    var country = (typeof window.activeCountry === 'function') ? window.activeCountry() : {code:'NG',name:'Nigeria'};
     var payoutLine = country && country.code === 'KE'
       ? '✅ Request withdrawals through supported Kenyan payment methods'
       : '✅ Request withdrawals through supported Nigerian banks and wallets';
 
     return [
-      '💬 I just completed ' + shareAmount() + ' in rewarded chat activities on Earn Chat!',
+      '💬 I just earned ' + shareAmount() + ' on Earn Chat!',
       '',
-      'Earn Chat gives users access to guided chat and daily earning activities.',
+      'Earn Chat gives users access to chat with foreigners and daily earning activities.',
       '✅ Free to join',
-      '✅ Rewards recorded from approved activities',
+      '✅ Earn from approved activities',
       payoutLine,
       '',
       'Join here 👇',
