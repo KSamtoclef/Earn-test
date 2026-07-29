@@ -36,7 +36,7 @@
   function message(){
     var country = (typeof window.activeCountry === 'function') ? window.activeCountry() : {code:'NG',name:'Nigeria'};
     var payoutLine = country && country.code === 'KE'
-      ? '✅ Request withdrawals through supported Kenyan payment methods'
+      ? '✅ Request withdrawals through supported Kenyan banks and payment methods'
       : '✅ Request withdrawals through supported Nigerian banks and wallets';
 
     return [
@@ -47,7 +47,7 @@
       '✅ Earn from approved activities',
       payoutLine,
       '',
-      'Join here 👇',
+      '*Join here 👇*',
       joinUrl(),
       '',
       'My Earn Chat progress is currently active 🔥'
