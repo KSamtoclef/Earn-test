@@ -1,5 +1,6 @@
 (()=>{'use strict';
 const q=(s,r=document)=>r.querySelector(s);
+function removeTopBanner(){const banner=q('#demo-heading');if(banner)banner.remove()}
 function addStyles(){
  if(q('#earnchat-mobile-landing-fix'))return;
  const style=document.createElement('style');
@@ -7,8 +8,8 @@ function addStyles(){
  style.textContent=`
  html,body{min-height:100%;height:auto!important;overflow-x:hidden!important;background:#f7f9fc!important}
  body{overflow-y:auto!important;-webkit-overflow-scrolling:touch;color:#162033!important}
- #demo-heading{position:sticky!important;top:0!important;z-index:100000!important;min-height:38px!important;padding:9px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#ffd66b!important;color:#171717!important;border-bottom:1px solid #e9bd49!important;line-height:1.2!important;font-size:11px!important;box-shadow:0 2px 10px rgba(25,35,55,.08)!important}
- #pg-landing.page.on{display:block!important;width:100%!important;min-height:calc(100dvh - 38px)!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:24px 20px calc(60px + env(safe-area-inset-bottom))!important;background:radial-gradient(circle at 8% 8%,rgba(219,234,255,.8),transparent 28%),radial-gradient(circle at 92% 4%,rgba(255,232,224,.65),transparent 24%),#f7f9fc!important;color:#162033!important}
+ #demo-heading{display:none!important}
+ #pg-landing.page.on{display:block!important;width:100%!important;min-height:100dvh!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:24px 20px calc(60px + env(safe-area-inset-bottom))!important;background:radial-gradient(circle at 8% 8%,rgba(219,234,255,.8),transparent 28%),radial-gradient(circle at 92% 4%,rgba(255,232,224,.65),transparent 24%),#f7f9fc!important;color:#162033!important}
  #pg-landing #hero-logo{margin-top:2px!important;padding:4px 0!important}
  #pg-landing .live{margin-bottom:18px!important;background:#fff!important;border:1px solid #8ee2cb!important;color:#168d70!important;box-shadow:0 8px 24px rgba(31,53,91,.07)!important}
  #pg-landing .flags{margin:8px auto 16px!important;max-width:390px!important}
@@ -53,14 +54,11 @@ function fixLandingCopy(){
  const how=q('#pg-landing .how-sec');
  if(how){const cards=[...how.querySelectorAll('.hi')];if(cards[1]){const t=cards[1].querySelector('.ht'),d=cards[1].querySelector('.hd');if(t)t.textContent='Complete guided chats daily';if(d)d.textContent='Finish guided chat activities and earn ₦2,500 for each approved completed chat.'}if(cards[2]){const t=cards[2].querySelector('.ht'),d=cards[2].querySelector('.hd');if(t)t.textContent='Complete sharing activities';if(d)d.textContent='Open the approved sharing flow and return. Earn Chat records the action, not private message delivery.'}}
 }
-function removeExtraDemoLabels(){
- const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
- const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- nodes.forEach(node=>{const parent=node.parentElement;if(!parent||parent.closest('#demo-heading')||['SCRIPT','STYLE','TEXTAREA'].includes(parent.tagName))return;if(/demo/i.test(node.nodeValue||''))node.nodeValue=node.nodeValue.replace(/demo/gi,'preview')});
- document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{['placeholder','title','aria-label'].forEach(a=>{const v=el.getAttribute(a);if(v&&/demo/i.test(v))el.setAttribute(a,v.replace(/demo/gi,'preview'))})});
+function cleanKnownPreviewText(){
+ document.querySelectorAll('.demo-local-note').forEach(el=>el.remove());
+ const summary=q('#wd-country-summary');if(summary&&/demo/i.test(summary.textContent||''))summary.textContent=summary.textContent.replace(/demo\s*local\s*request/gi,'Local test request');
 }
-let busy=false;function run(){if(busy)return;busy=true;try{addStyles();fixLandingCopy();removeExtraDemoLabels()}finally{busy=false}}
+function run(){removeTopBanner();addStyles();fixLandingCopy();cleanKnownPreviewText()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 window.addEventListener('earnchat:state-updated',run);
-const observer=new MutationObserver(()=>{if(!busy)requestAnimationFrame(run)});observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
