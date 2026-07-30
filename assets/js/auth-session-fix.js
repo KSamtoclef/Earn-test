@@ -1,8 +1,22 @@
 (function(){
   'use strict';
 
+  function loadRuntimeScript(src, dataKey){
+    if(document.querySelector('script[' + dataKey + ']')) return;
+    var script=document.createElement('script');
+    script.src=src;
+    script.async=false;
+    script.setAttribute(dataKey,'1');
+    script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);};
+    document.head.appendChild(script);
+  }
+
+  // Critical public layout loads before any Supabase check.
+  // The landing page remains usable even when the backend is disabled or unavailable.
+  loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-2','data-earn-chat-mobile-landing-fix');
+
   if(!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_KEY){
-    console.error('Earn Chat Supabase SDK or credentials are missing.');
+    console.warn('Earn Chat Supabase is not connected. Public pages remain available.');
     return;
   }
 
@@ -16,23 +30,12 @@
     }
   });
 
-  function loadRuntimeScript(src, dataKey){
-    if(document.querySelector('script[' + dataKey + ']')) return;
-    var script=document.createElement('script');
-    script.src=src;
-    script.async=false;
-    script.setAttribute(dataKey,'1');
-    script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);};
-    document.head.appendChild(script);
-  }
-
-  function loadRuntimeUpgrades(){
+  function loadBackendUpgrades(){
     loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
     loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
     loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260729-1','data-earn-chat-core-flow');
     loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-2','data-earn-chat-professional-five-day');
     loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-1','data-earn-chat-sponsored-visits');
-    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-1','data-earn-chat-mobile-landing-fix');
   }
 
   function showAuthStatus(message,isError){
@@ -94,7 +97,7 @@
     try{ window.saveState(); }catch(error){}
   });
 
-  loadRuntimeUpgrades();
+  loadBackendUpgrades();
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restoreEarnChatSession, {once:true});
   else restoreEarnChatSession();
 })();
