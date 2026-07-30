@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  window.EARNCHAT_BUILD='2026-07-30-performance-1';
+  window.EARNCHAT_BUILD='2026-07-30-unified-ui-1';
 
   function loadRuntimeScript(src, dataKey){
     if(document.querySelector('script[' + dataKey + ']')) return Promise.resolve();
@@ -68,7 +68,8 @@
   }
   window.ensureEarnChatAppExperience=ensureAppExperience;
 
-  // Only the lightweight landing design is required on first paint.
+  // Lightweight visual system loads immediately and covers every customer page.
+  loadRuntimeScript('./assets/js/unified-customer-theme.js?v=20260730-1','data-earn-chat-unified-theme');
   loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-5','data-earn-chat-mobile-landing-fix');
   if(location.hash==='#admin'||location.hash==='#admin-panel'){
     loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
