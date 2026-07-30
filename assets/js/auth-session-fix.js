@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  window.EARNCHAT_BUILD='2026-07-30-public-ui-3';
+  window.EARNCHAT_BUILD='2026-07-30-public-ui-4';
 
   function loadRuntimeScript(src, dataKey){
     if(document.querySelector('script[' + dataKey + ']')) return;
@@ -33,7 +33,7 @@
     }
 
     var hero=document.querySelector('#pg-landing .hero p');
-    if(hero) hero.innerHTML='Complete guided conversations and daily activities.<br>Earn <strong style="color:var(--g);">₦2,500</strong> per completed guided chat, within your five-day daily limit.';
+    if(hero) hero.innerHTML='Complete guided conversations and daily activities.<br>Earn <strong style="color:#12aa82;">₦2,500</strong> per completed guided chat, within your five-day daily limit.';
     var stat=document.querySelector('#pg-landing .big-stats .bs-card:first-child .bs-val');
     if(stat) stat.textContent='₦2,500';
     var label=document.querySelector('#pg-landing .big-stats .bs-card:first-child .bs-lbl');
@@ -52,7 +52,7 @@
   }
 
   function loadPublicExperience(){
-    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-3','data-earn-chat-mobile-landing-fix');
+    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-4','data-earn-chat-mobile-landing-fix');
     loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-3','data-earn-chat-professional-five-day');
     loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-2','data-earn-chat-sponsored-visits');
     loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-2','data-earn-chat-core-flow');
