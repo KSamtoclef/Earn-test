@@ -1,0 +1,9 @@
+{
+  "name": "earn-chat-production",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-production.mjs",
+    "test": "npm run validate"
+  }
+}
