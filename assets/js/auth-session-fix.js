@@ -1,7 +1,9 @@
 (function(){
 'use strict';
-window.EARNCHAT_BUILD='2026-07-30-full-economy-lite-6';
+window.EARNCHAT_BUILD='2026-07-30-full-economy-lite-7';
 function loadRuntimeScript(src,dataKey){if(document.querySelector('script['+dataKey+']'))return Promise.resolve();return new Promise(function(resolve){var script=document.createElement('script');script.src=src;script.async=true;script.setAttribute(dataKey,'1');script.onload=resolve;script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);resolve()};document.head.appendChild(script)})}
+/* The rewarded daily-share feature was removed. Keep legacy calls harmless so old UI code cannot interrupt login or rendering. */
+window.renderDailyShareTask=function(){var legacy=document.getElementById('tsk-daily-share');if(legacy)legacy.remove()};
 var appExperiencePromise=null,sponsoredPromise=null,taskPromise=null;
 function ensureAppExperience(){if(appExperiencePromise)return appExperiencePromise;appExperiencePromise=Promise.all([
 loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-6','data-earn-chat-core-flow'),
@@ -16,6 +18,7 @@ window.ensureEarnChatAppExperience=ensureAppExperience;window.ensureEarnChatSpon
 function needsAppModules(pageId){return !['pg-landing','pg-login','pg-register','pg-country'].includes(pageId)}
 function openPage(pageId){if(needsAppModules(pageId))ensureAppExperience();if(typeof window.pg==='function'){window.pg(pageId);return}document.querySelectorAll('.page').forEach(function(page){page.classList.remove('on')});var target=document.getElementById(pageId);if(target){target.classList.add('on');window.scrollTo(0,0)}}
 function stabilisePublicUi(){if(!document.getElementById('earnchat-public-stability')){var style=document.createElement('style');style.id='earnchat-public-stability';style.textContent='#land-signup-btn,#land-signup-btn2,#land-login-btn{position:relative!important;z-index:20!important;pointer-events:auto!important;touch-action:manipulation!important}#pg-landing{pointer-events:auto!important}';document.head.appendChild(style)}document.querySelectorAll('#land-signup-btn,#land-signup-btn2').forEach(function(button){if(button.dataset.ecPublicBound)return;button.dataset.ecPublicBound='1';button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-register')},true)});var login=document.getElementById('land-login-btn');if(login&&!login.dataset.ecPublicBound){login.dataset.ecPublicBound='1';login.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-login')},true)}}
+loadRuntimeScript('./assets/js/landing-conversion-upgrade.js?v=20260730-1','data-earn-chat-landing-conversion');
 loadRuntimeScript('./assets/js/earnchat-business-config.js?v=20260730-2','data-earn-chat-business').then(function(){
  loadRuntimeScript('./assets/js/app-consistency-controller.js?v=20260730-5','data-earn-chat-consistency');
  loadRuntimeScript('./assets/js/earnchat-economy-upgrade.js?v=20260730-2','data-earn-chat-economy');
