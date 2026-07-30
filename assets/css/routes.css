@@ -1,0 +1,1 @@
+body[data-route="landing"] .bottom-nav,body[data-route="register"] .bottom-nav,body[data-route="login"] .bottom-nav,body[data-route="admin"] .bottom-nav,body[data-route="chat"] .bottom-nav{display:none}.secondary.active{background:#eaf3ff;border-color:#72a9f6;color:#245fca}.app-header .pill:empty{display:none}
