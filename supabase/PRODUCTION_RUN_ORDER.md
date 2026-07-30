@@ -9,11 +9,12 @@ Run each file once in the SQL Editor, in this exact order:
 3. `earnchat_production_features_20260730.sql`
 4. `earnchat_production_integrity_20260730.sql`
 5. `earnchat_production_finalization_20260730.sql`
-6. `earnchat_production_verify_20260730.sql` — read-only verification
+6. `earnchat_production_release_patch_20260730.sql`
+7. `earnchat_production_verify_20260730.sql` — read-only verification
 
-The earlier `earnchat_full_upgrade_20260730.sql` and `earnchat_admin_tasks_20260730.sql` migrations do not replace this production package. The production files safely add or replace the canonical tables and RPC functions used by the rebuilt frontend.
+The earlier `earnchat_full_upgrade_20260730.sql` and `earnchat_admin_tasks_20260730.sql` migrations do not replace this production package. The production files add or replace the canonical tables and RPC functions used by the rebuilt frontend.
 
-After files 1–5 succeed, confirm the trusted administrator is still active:
+After files 1–6 succeed, confirm the trusted administrator is still active:
 
 ```sql
 select id,email,is_admin from public.profiles where is_admin=true;
@@ -25,4 +26,4 @@ If no administrator is returned, mark only the trusted account:
 update public.profiles set is_admin=true where lower(email)=lower('YOUR_ADMIN_EMAIL');
 ```
 
-Run file 6 and inspect every result set. Empty anomaly result sets are expected. The object-existence result must show `exists = true` for every required table and function. The configuration version must be `2026-07-30-production-final`.
+Run file 7 and inspect every result set. Empty anomaly result sets are expected. The object-existence result must show `exists = true` for every required table and function. The configuration version must be `2026-07-30-production-release`.
