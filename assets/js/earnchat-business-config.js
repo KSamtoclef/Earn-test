@@ -9,7 +9,7 @@ const COUNTRIES={
  NG:{code:'NG',name:'Nigeria',currency:'NGN',symbol:'₦',multiplier:1,payouts:['bank'],phoneCode:'+234'},
  KE:{code:'KE',name:'Kenya',currency:'KES',symbol:'KSh ',multiplier:.6,payouts:['mpesa','bank'],phoneCode:'+254'}
 };
-const CONFIG={version:'2026-07-30-economy-1',dailyCapBase:20000,referralRewardBase:2000,referralWithdrawMinBase:40000,referralRequiredActiveDays:2,referrerAccountDays:5,levels:LEVELS,countries:COUNTRIES};
+const CONFIG={version:'2026-07-30-economy-2',signupBonusBase:2000,dailyCapBase:20000,referralRewardBase:2000,referralWithdrawMinBase:40000,referralRequiredActiveDays:2,referrerAccountDays:5,levels:LEVELS,countries:COUNTRIES};
 function country(code){return COUNTRIES[code]||COUNTRIES.NG}
 function level(name){return LEVELS[name]||LEVELS.Starter}
 function amount(base,code){const c=country(code);return Math.round(Number(base||0)*c.multiplier)}
