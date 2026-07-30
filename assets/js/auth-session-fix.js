@@ -1,11 +1,12 @@
 (function(){
 'use strict';
-window.EARNCHAT_BUILD='2026-07-30-lite-control-centre-1';
+window.EARNCHAT_BUILD='2026-07-30-lite-control-centre-2';
 function loadRuntimeScript(src,dataKey){if(document.querySelector('script['+dataKey+']'))return Promise.resolve();return new Promise(function(resolve){var script=document.createElement('script');script.src=src;script.async=true;script.setAttribute(dataKey,'1');script.onload=resolve;script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);resolve()};document.head.appendChild(script)})}
 var appExperiencePromise=null,sponsoredPromise=null,sharePromise=null;
 function ensureAppExperience(){if(appExperiencePromise)return appExperiencePromise;appExperiencePromise=Promise.all([
 loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-6','data-earn-chat-core-flow'),
-loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-8','data-earn-chat-professional-five-day')
+loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-8','data-earn-chat-professional-five-day'),
+loadRuntimeScript('./assets/js/global-navigation-controller.js?v=20260730-1','data-earn-chat-global-nav')
 ]).then(function(){window.dispatchEvent(new CustomEvent('earnchat:app-ready'))});return appExperiencePromise}
 function ensureSponsoredVisits(){if(sponsoredPromise)return sponsoredPromise;sponsoredPromise=loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-6','data-earn-chat-sponsored-visits').then(function(){window.dispatchEvent(new CustomEvent('earnchat:sponsored-ready'))});return sponsoredPromise}
 function ensureShareExperience(){if(sharePromise)return sharePromise;sharePromise=loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260730-2','data-earn-chat-share-upgrade');return sharePromise}
