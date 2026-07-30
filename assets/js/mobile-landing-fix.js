@@ -1,55 +1,66 @@
 (()=>{'use strict';
-function q(selector,root=document){return root.querySelector(selector)}
+const q=(s,r=document)=>r.querySelector(s);
 function addStyles(){
  if(q('#earnchat-mobile-landing-fix'))return;
  const style=document.createElement('style');
  style.id='earnchat-mobile-landing-fix';
  style.textContent=`
- html,body{min-height:100%;height:auto!important;overflow-x:hidden!important}
- body{overflow-y:auto!important;-webkit-overflow-scrolling:touch}
- #demo-heading{position:sticky!important;top:0!important;min-height:42px!important;padding:11px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;line-height:1.2!important;font-size:12px!important}
- #pg-landing.page.on{display:block!important;width:100%!important;min-height:calc(100dvh - 42px)!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:18px 20px calc(54px + env(safe-area-inset-bottom))!important}
- #pg-landing #hero-logo{margin-top:4px!important;padding:6px 0!important}
- #pg-landing .live{margin-bottom:14px!important}
- #pg-landing .flags{margin-top:5px!important;margin-bottom:10px!important}
- #pg-landing .hero{margin-top:12px!important}
- #pg-landing .hero h1{font-size:clamp(30px,8vw,42px)!important;line-height:1.13!important;margin-bottom:10px!important}
- #pg-landing .hero p{max-width:360px!important;margin-bottom:16px!important}
- #pg-landing .big-stats{width:100%!important;max-width:390px!important;margin-left:auto!important;margin-right:auto!important}
- #pg-landing .gbtn,#pg-landing .obtn,#pg-landing .v33-quick-path,#pg-landing .adbox,#pg-landing .how-sec,#pg-landing .testis,#pg-landing .paylist{max-width:390px!important}
- #pg-landing .how-sec{margin-left:auto!important;margin-right:auto!important}
- #pg-landing .hi{min-height:auto!important}
+ html,body{min-height:100%;height:auto!important;overflow-x:hidden!important;background:#f7f9fc!important}
+ body{overflow-y:auto!important;-webkit-overflow-scrolling:touch;color:#162033!important}
+ #demo-heading{position:sticky!important;top:0!important;z-index:100000!important;min-height:38px!important;padding:9px 12px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#ffd66b!important;color:#171717!important;border-bottom:1px solid #e9bd49!important;line-height:1.2!important;font-size:11px!important;box-shadow:0 2px 10px rgba(25,35,55,.08)!important}
+ #pg-landing.page.on{display:block!important;width:100%!important;min-height:calc(100dvh - 38px)!important;height:auto!important;max-height:none!important;overflow:visible!important;padding:24px 20px calc(60px + env(safe-area-inset-bottom))!important;background:radial-gradient(circle at 8% 8%,rgba(219,234,255,.8),transparent 28%),radial-gradient(circle at 92% 4%,rgba(255,232,224,.65),transparent 24%),#f7f9fc!important;color:#162033!important}
+ #pg-landing #hero-logo{margin-top:2px!important;padding:4px 0!important}
+ #pg-landing .live{margin-bottom:18px!important;background:#fff!important;border:1px solid #8ee2cb!important;color:#168d70!important;box-shadow:0 8px 24px rgba(31,53,91,.07)!important}
+ #pg-landing .flags{margin:8px auto 16px!important;max-width:390px!important}
+ #pg-landing .flag{background:#fff!important;border:1px solid #e3e8f0!important;color:#566274!important;box-shadow:0 6px 18px rgba(31,53,91,.06)!important}
+ #pg-landing .hero{margin-top:10px!important}
+ #pg-landing .hero h1{font-size:clamp(31px,8vw,43px)!important;line-height:1.12!important;margin-bottom:13px!important;color:#162033!important;letter-spacing:-.7px!important}
+ #pg-landing .hero h1 span{color:#12aa82!important}
+ #pg-landing .hero p{max-width:370px!important;margin:0 auto 19px!important;color:#657286!important;font-size:14px!important;line-height:1.65!important}
+ #pg-landing .big-stats{width:100%!important;max-width:390px!important;margin:0 auto 16px!important;background:#fff!important;border:1px solid #e3e8f0!important;border-radius:21px!important;box-shadow:0 14px 36px rgba(31,53,91,.09)!important}
+ #pg-landing .bs-val{color:#12aa82!important}
+ #pg-landing .bs-lbl{color:#697588!important}
+ #pg-landing .bs-div{background:#e7ebf1!important}
+ #pg-landing .gbtn{max-width:390px!important;background:linear-gradient(135deg,#13c99b,#20b984)!important;color:#071a15!important;box-shadow:0 12px 28px rgba(18,173,132,.22)!important;border:0!important}
+ #pg-landing .obtn{max-width:390px!important;background:#fff!important;color:#526174!important;border:1px solid #dce3ec!important;box-shadow:0 8px 22px rgba(31,53,91,.06)!important}
+ #pg-landing .v33-hero-note{color:#7b8798!important}
+ #pg-landing .v33-quick-path{max-width:390px!important;gap:9px!important}
+ #pg-landing .v33-quick-step{background:#fff!important;border:1px solid #e1e7ef!important;box-shadow:0 7px 20px rgba(31,53,91,.055)!important}
+ #pg-landing .v33-quick-step strong{color:#202b3e!important}
+ #pg-landing .v33-quick-step span{color:#718095!important}
+ #pg-landing .adbox,#pg-landing .how-sec,#pg-landing .testis,#pg-landing .paylist{max-width:390px!important}
+ #pg-landing .adbox{background:#fff!important;border:1px dashed #b9c8da!important;color:#263247!important;box-shadow:0 9px 25px rgba(31,53,91,.06)!important}
+ #pg-landing .adbox .al{color:#7b8797!important}
+ #pg-landing .adbox .ab{color:#283449!important}
+ #pg-landing .adbox .ae{color:#129b77!important}
+ #pg-landing .how-sec{margin:28px auto 0!important}
+ #pg-landing .sech{color:#6f7d90!important}
+ #pg-landing .hi,#pg-landing .tc,#pg-landing .paylist{background:#fff!important;border:1px solid #e1e7ef!important;color:#1d293b!important;box-shadow:0 9px 26px rgba(31,53,91,.065)!important}
+ #pg-landing .hi .ht,#pg-landing .tnm,#pg-landing .pnm{color:#1c2738!important}
+ #pg-landing .hi .hd,#pg-landing .ttxt,#pg-landing .tlc,#pg-landing .ptm{color:#6f7d90!important}
+ #pg-landing .trust-badge{background:#fff!important;border:1px solid #e1e7ef!important;color:#435166!important;box-shadow:0 6px 18px rgba(31,53,91,.05)!important}
  #pg-landing>*{flex-shrink:0}
- @media(max-width:370px){
-  #pg-landing.page.on{padding-left:14px!important;padding-right:14px!important}
-  #pg-landing .v33-quick-path{gap:5px!important}
-  #pg-landing .v33-quick-step{padding:9px 4px!important}
- }
+ @media(max-width:370px){#pg-landing.page.on{padding-left:14px!important;padding-right:14px!important}.v33-quick-path{gap:6px!important}.v33-quick-step{padding:9px 4px!important}}
  `;
  document.head.appendChild(style);
 }
 function replaceText(selector,text){const el=q(selector);if(el&&el.textContent!==text)el.textContent=text}
 function fixLandingCopy(){
  const hero=q('#pg-landing .hero p');
- if(hero)hero.innerHTML='Complete guided chat activities and daily tasks.<br>Earn <strong style="color:var(--g)">₦2,500</strong> per completed guided chat. Withdraw after completing Day 5 and all requirements.';
+ if(hero)hero.innerHTML='Complete guided chat activities and daily tasks.<br>Earn <strong style="color:#12aa82">₦2,500</strong> per completed guided chat. Withdraw after completing Day 5 and all requirements.';
  replaceText('#pg-landing .bs-card:first-child .bs-val','₦2,500');
  replaceText('#pg-landing .bs-card:first-child .bs-lbl','Per Guided Chat');
  const how=q('#pg-landing .how-sec');
- if(how){
-  const cards=[...how.querySelectorAll('.hi')];
-  if(cards[1]){
-   const title=cards[1].querySelector('.ht'),desc=cards[1].querySelector('.hd');
-   if(title)title.textContent='Complete guided chats daily';
-   if(desc)desc.textContent='Finish guided chat activities and earn ₦2,500 for each approved completed chat.';
-  }
-  if(cards[2]){
-   const title=cards[2].querySelector('.ht'),desc=cards[2].querySelector('.hd');
-   if(title)title.textContent='Complete sharing activities';
-   if(desc)desc.textContent='Open the approved sharing flow and return. Earn Chat records the action, not private message delivery.';
-  }
- }
+ if(how){const cards=[...how.querySelectorAll('.hi')];if(cards[1]){const t=cards[1].querySelector('.ht'),d=cards[1].querySelector('.hd');if(t)t.textContent='Complete guided chats daily';if(d)d.textContent='Finish guided chat activities and earn ₦2,500 for each approved completed chat.'}if(cards[2]){const t=cards[2].querySelector('.ht'),d=cards[2].querySelector('.hd');if(t)t.textContent='Complete sharing activities';if(d)d.textContent='Open the approved sharing flow and return. Earn Chat records the action, not private message delivery.'}}
 }
-function run(){addStyles();fixLandingCopy()}
+function removeExtraDemoLabels(){
+ const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+ const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+ nodes.forEach(node=>{const parent=node.parentElement;if(!parent||parent.closest('#demo-heading')||['SCRIPT','STYLE','TEXTAREA'].includes(parent.tagName))return;if(/demo/i.test(node.nodeValue||''))node.nodeValue=node.nodeValue.replace(/demo/gi,'preview')});
+ document.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>{['placeholder','title','aria-label'].forEach(a=>{const v=el.getAttribute(a);if(v&&/demo/i.test(v))el.setAttribute(a,v.replace(/demo/gi,'preview'))})});
+}
+let busy=false;function run(){if(busy)return;busy=true;try{addStyles();fixLandingCopy();removeExtraDemoLabels()}finally{busy=false}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
 window.addEventListener('earnchat:state-updated',run);
+const observer=new MutationObserver(()=>{if(!busy)requestAnimationFrame(run)});observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
