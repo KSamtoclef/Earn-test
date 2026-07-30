@@ -1,19 +1,23 @@
 (function(){
   'use strict';
 
-  window.EARNCHAT_BUILD='2026-07-30-public-ui-4';
+  window.EARNCHAT_BUILD='2026-07-30-performance-1';
 
   function loadRuntimeScript(src, dataKey){
-    if(document.querySelector('script[' + dataKey + ']')) return;
-    var script=document.createElement('script');
-    script.src=src;
-    script.async=false;
-    script.setAttribute(dataKey,'1');
-    script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);};
-    document.head.appendChild(script);
+    if(document.querySelector('script[' + dataKey + ']')) return Promise.resolve();
+    return new Promise(function(resolve){
+      var script=document.createElement('script');
+      script.src=src;
+      script.async=true;
+      script.setAttribute(dataKey,'1');
+      script.onload=resolve;
+      script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);resolve();};
+      document.head.appendChild(script);
+    });
   }
 
   function openPage(pageId){
+    ensureAppExperience();
     if(typeof window.pg==='function'){
       window.pg(pageId);
       return;
@@ -51,14 +55,25 @@
     }
   }
 
-  function loadPublicExperience(){
-    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-4','data-earn-chat-mobile-landing-fix');
-    loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-3','data-earn-chat-professional-five-day');
-    loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-2','data-earn-chat-sponsored-visits');
-    loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-2','data-earn-chat-core-flow');
+  var appExperiencePromise=null;
+  function ensureAppExperience(){
+    if(appExperiencePromise) return appExperiencePromise;
+    appExperiencePromise=Promise.all([
+      loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-3','data-earn-chat-core-flow'),
+      loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-4','data-earn-chat-professional-five-day'),
+      loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-3','data-earn-chat-sponsored-visits'),
+      loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260730-1','data-earn-chat-share-upgrade')
+    ]);
+    return appExperiencePromise;
+  }
+  window.ensureEarnChatAppExperience=ensureAppExperience;
+
+  // Only the lightweight landing design is required on first paint.
+  loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-5','data-earn-chat-mobile-landing-fix');
+  if(location.hash==='#admin'||location.hash==='#admin-panel'){
+    loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
   }
 
-  loadPublicExperience();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',stabilisePublicUi,{once:true});
   else stabilisePublicUi();
 
@@ -76,9 +91,6 @@
       storageKey: 'earn-chat-auth-v1'
     }
   });
-
-  loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
-  loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
 
   function showAuthStatus(message,isError){
     var box=document.getElementById('earnchat-auth-runtime-status');
@@ -103,6 +115,7 @@
       var session = result && result.data ? result.data.session : null;
       if(!session || !session.user) return;
 
+      await ensureAppExperience();
       window.S.supaId = session.user.id;
       window.S.email = session.user.email || window.S.email || '';
       var metadata = session.user.user_metadata || {};
@@ -130,6 +143,7 @@
 
   window._supa.auth.onAuthStateChange(function(event, session){
     if(!session || !session.user) return;
+    ensureAppExperience();
     window.S.supaId = session.user.id;
     window.S.email = session.user.email || window.S.email || '';
     try{ window.saveState(); }catch(error){}
