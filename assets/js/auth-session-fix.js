@@ -32,6 +32,7 @@
     loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260729-1','data-earn-chat-core-flow');
     loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-2','data-earn-chat-professional-five-day');
     loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-1','data-earn-chat-sponsored-visits');
+    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-1','data-earn-chat-mobile-landing-fix');
   }
 
   function showAuthStatus(message,isError){
