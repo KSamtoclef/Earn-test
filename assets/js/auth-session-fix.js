@@ -1,9 +1,20 @@
 (function(){
 'use strict';
-window.EARNCHAT_BUILD='2026-07-30-full-economy-lite-7';
+window.EARNCHAT_BUILD='2026-07-30-full-economy-lite-8';
 function loadRuntimeScript(src,dataKey){if(document.querySelector('script['+dataKey+']'))return Promise.resolve();return new Promise(function(resolve){var script=document.createElement('script');script.src=src;script.async=true;script.setAttribute(dataKey,'1');script.onload=resolve;script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);resolve()};document.head.appendChild(script)})}
 /* The rewarded daily-share feature was removed. Keep legacy calls harmless so old UI code cannot interrupt login or rendering. */
 window.renderDailyShareTask=function(){var legacy=document.getElementById('tsk-daily-share');if(legacy)legacy.remove()};
+function criticalCountry(){try{return(window.S&&window.S.country)||localStorage.getItem('earnchat-country')||'NG'}catch(error){return'NG'}}
+function applyCriticalLandingCopy(){
+ var landing=document.getElementById('pg-landing');if(!landing)return;
+ var kenya=criticalCountry()==='KE';var earning=kenya?'KSh 40,000':'₦50,000';
+ var hero=landing.querySelector('.hero');if(hero){var heading=hero.querySelector('h1');if(heading)heading.innerHTML='Chat with Foreigners<br><span>Complete Tasks. Earn Real Cash.</span>';var paragraph=hero.querySelector('p');if(paragraph)paragraph.innerHTML='Start free and earn through approved chats, linked tasks and qualified referrals.<br><strong>Earn up to '+earning+' during your 5-day activity cycle.</strong>'}
+ var cards=landing.querySelectorAll('.big-stats .bs-card');
+ function setCard(card,value,label){if(!card)return;var valueNode=card.querySelector('.bs-val');var labelNode=card.querySelector('.bs-lbl');if(valueNode)valueNode.textContent=value;if(labelNode)labelNode.textContent=label}
+ if(cards.length>=3){setCard(cards[0],'5 Days','Activity cycle');setCard(cards[1],'More Ways','Tasks + referrals');setCard(cards[2],'4 Daily','Starter chats')}
+ var signup=document.getElementById('land-signup-btn');if(signup)signup.textContent=kenya?'Start Free — Earn up to KSh 40,000':'Start Free — Earn up to ₦50,000';
+}
+applyCriticalLandingCopy();
 var appExperiencePromise=null,sponsoredPromise=null,taskPromise=null;
 function ensureAppExperience(){if(appExperiencePromise)return appExperiencePromise;appExperiencePromise=Promise.all([
 loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-6','data-earn-chat-core-flow'),
@@ -17,8 +28,8 @@ function ensureLinkedTasks(){if(taskPromise)return taskPromise;taskPromise=loadR
 window.ensureEarnChatAppExperience=ensureAppExperience;window.ensureEarnChatSponsoredVisits=ensureSponsoredVisits;window.ensureEarnChatLinkedTasks=ensureLinkedTasks;
 function needsAppModules(pageId){return !['pg-landing','pg-login','pg-register','pg-country'].includes(pageId)}
 function openPage(pageId){if(needsAppModules(pageId))ensureAppExperience();if(typeof window.pg==='function'){window.pg(pageId);return}document.querySelectorAll('.page').forEach(function(page){page.classList.remove('on')});var target=document.getElementById(pageId);if(target){target.classList.add('on');window.scrollTo(0,0)}}
-function stabilisePublicUi(){if(!document.getElementById('earnchat-public-stability')){var style=document.createElement('style');style.id='earnchat-public-stability';style.textContent='#land-signup-btn,#land-signup-btn2,#land-login-btn{position:relative!important;z-index:20!important;pointer-events:auto!important;touch-action:manipulation!important}#pg-landing{pointer-events:auto!important}';document.head.appendChild(style)}document.querySelectorAll('#land-signup-btn,#land-signup-btn2').forEach(function(button){if(button.dataset.ecPublicBound)return;button.dataset.ecPublicBound='1';button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-register')},true)});var login=document.getElementById('land-login-btn');if(login&&!login.dataset.ecPublicBound){login.dataset.ecPublicBound='1';login.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-login')},true)}}
-loadRuntimeScript('./assets/js/landing-conversion-upgrade.js?v=20260730-1','data-earn-chat-landing-conversion');
+function stabilisePublicUi(){applyCriticalLandingCopy();if(!document.getElementById('earnchat-public-stability')){var style=document.createElement('style');style.id='earnchat-public-stability';style.textContent='#land-signup-btn,#land-signup-btn2,#land-login-btn{position:relative!important;z-index:20!important;pointer-events:auto!important;touch-action:manipulation!important}#pg-landing{pointer-events:auto!important}';document.head.appendChild(style)}document.querySelectorAll('#land-signup-btn,#land-signup-btn2').forEach(function(button){if(button.dataset.ecPublicBound)return;button.dataset.ecPublicBound='1';button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-register')},true)});var login=document.getElementById('land-login-btn');if(login&&!login.dataset.ecPublicBound){login.dataset.ecPublicBound='1';login.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-login')},true)}}
+loadRuntimeScript('./assets/js/landing-conversion-upgrade.js?v=20260730-2','data-earn-chat-landing-conversion');
 loadRuntimeScript('./assets/js/earnchat-business-config.js?v=20260730-2','data-earn-chat-business').then(function(){
  loadRuntimeScript('./assets/js/app-consistency-controller.js?v=20260730-5','data-earn-chat-consistency');
  loadRuntimeScript('./assets/js/earnchat-economy-upgrade.js?v=20260730-2','data-earn-chat-economy');
