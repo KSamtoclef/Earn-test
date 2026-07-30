@@ -1,11 +1,11 @@
 (function(){
 'use strict';
-window.EARNCHAT_BUILD='2026-07-30-light-ui-2';
+window.EARNCHAT_BUILD='2026-07-30-dashboard-ui-1';
 function loadRuntimeScript(src,dataKey){if(document.querySelector('script['+dataKey+']'))return Promise.resolve();return new Promise(function(resolve){var script=document.createElement('script');script.src=src;script.async=true;script.setAttribute(dataKey,'1');script.onload=resolve;script.onerror=function(){console.error('Earn Chat runtime failed to load:',src);resolve()};document.head.appendChild(script)})}
 var appExperiencePromise=null;
 function ensureAppExperience(){if(appExperiencePromise)return appExperiencePromise;appExperiencePromise=Promise.all([
 loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-5','data-earn-chat-core-flow'),
-loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-6','data-earn-chat-professional-five-day'),
+loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-7','data-earn-chat-professional-five-day'),
 loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-5','data-earn-chat-sponsored-visits'),
 loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260730-1','data-earn-chat-share-upgrade')
 ]).then(function(){window.dispatchEvent(new CustomEvent('earnchat:app-ready'))});return appExperiencePromise}
@@ -14,7 +14,7 @@ function needsAppModules(pageId){return !['pg-landing','pg-login','pg-register',
 function openPage(pageId){if(needsAppModules(pageId))ensureAppExperience();if(typeof window.pg==='function'){window.pg(pageId);return}document.querySelectorAll('.page').forEach(function(page){page.classList.remove('on')});var target=document.getElementById(pageId);if(target){target.classList.add('on');window.scrollTo(0,0)}}
 function stabilisePublicUi(){if(!document.getElementById('earnchat-public-stability')){var style=document.createElement('style');style.id='earnchat-public-stability';style.textContent='#land-signup-btn,#land-signup-btn2,#land-login-btn{position:relative!important;z-index:20!important;pointer-events:auto!important;touch-action:manipulation!important}#pg-landing{pointer-events:auto!important}';document.head.appendChild(style)}document.querySelectorAll('#land-signup-btn,#land-signup-btn2').forEach(function(button){if(button.dataset.ecPublicBound)return;button.dataset.ecPublicBound='1';button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-register')},true)});var login=document.getElementById('land-login-btn');if(login&&!login.dataset.ecPublicBound){login.dataset.ecPublicBound='1';login.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-login')},true)}}
 loadRuntimeScript('./assets/js/app-consistency-controller.js?v=20260730-2','data-earn-chat-consistency');
-loadRuntimeScript('./assets/js/unified-customer-theme.js?v=20260730-3','data-earn-chat-unified-theme');
+loadRuntimeScript('./assets/js/unified-customer-theme.js?v=20260730-4','data-earn-chat-unified-theme');
 loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-5','data-earn-chat-mobile-landing-fix');
 if(location.hash==='#admin'||location.hash==='#admin-panel')loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stabilisePublicUi,{once:true});else stabilisePublicUi();
