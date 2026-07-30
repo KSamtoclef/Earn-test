@@ -26,6 +26,7 @@
     loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
     loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
     loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260729-1','data-earn-chat-core-flow');
+    loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-1','data-earn-chat-professional-five-day');
   }
 
   async function restoreEarnChatSession(){
