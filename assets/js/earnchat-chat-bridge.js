@@ -1,9 +1,0 @@
-(()=>{'use strict';
-let startedAt=0,submitting=false;
-const q=(s,r=document)=>r.querySelector(s),qa=(s,r=document)=>[...r.querySelectorAll(s)];
-function begin(){startedAt=Date.now();submitting=false}
-async function complete(){if(submitting)return;submitting=true;const messages=Math.max(0,qa('#chat-msgs .msg.me,#chat-msgs .message.me').length),duration=Math.max(0,Math.floor((Date.now()-(startedAt||Date.now()))/1000));if(!window._supa){submitting=false;return}try{const r=await window._supa.rpc('complete_earnchat_chat',{p_messages:messages,p_duration_seconds:duration,p_quality:{source:'guided_chat'}});if(r.error)throw r.error;const wallet=await window._supa.rpc('get_my_earnchat_wallet');if(!wallet.error&&wallet.data&&window.S){window.S.balance=Number(wallet.data.work_available||window.S.balance||0);window.S.workAvailableBalance=Number(wallet.data.work_available||0);window.S.approvedChats=Number(wallet.data.approved_chats||window.S.approvedChats||0);try{window.saveState?.();window.updateUI?.()}catch(e){}window.dispatchEvent(new CustomEvent('earnchat:state-updated'))}const notice=document.getElementById('ET');if(notice){notice.textContent=`Approved chat: ${r.data?.currency==='KES'?'KSh ':'₦'}${Number(r.data?.amount||0).toLocaleString()} · ${Number(r.data?.remaining||0)} chats remaining`;notice.classList.add('show');setTimeout(()=>notice.classList.remove('show'),3200)}}catch(e){const notice=document.getElementById('ET');if(notice){notice.textContent=e.message||'Chat could not be approved';notice.classList.add('show');setTimeout(()=>notice.classList.remove('show'),3500)}}finally{submitting=false}}
-window.completeEarnChatSecureSession=complete;
-window.addEventListener('earnchat:page-ready',e=>{if(e.detail?.page==='pg-chat')begin()});
-if(q('#pg-chat.on'))begin();
-})();
