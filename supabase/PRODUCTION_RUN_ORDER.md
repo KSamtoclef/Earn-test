@@ -1,29 +1,35 @@
 # Earn Chat production SQL run order
 
-Back up the Supabase database before running this package.
+Back up the Supabase database before running the production installer.
 
-Run each file once in the SQL Editor, in this exact order:
+Run only these two files in the Supabase SQL Editor:
 
-1. `earnchat_production_rebuild_20260730.sql`
-2. `earnchat_production_completion_20260730.sql`
-3. `earnchat_production_features_20260730.sql`
-4. `earnchat_production_integrity_20260730.sql`
-5. `earnchat_production_finalization_20260730.sql`
-6. `earnchat_production_release_patch_20260730.sql`
-7. `earnchat_production_verify_20260730.sql` — read-only verification
+1. `earnchat_production_install.sql`
+2. `earnchat_production_verify.sql` — read-only verification
 
-The earlier `earnchat_full_upgrade_20260730.sql` and `earnchat_admin_tasks_20260730.sql` migrations do not replace this production package. The production files add or replace the canonical tables and RPC functions used by the rebuilt frontend.
+Do not rerun the older multi-file production package. The consolidated installer is designed to recover safely from the partial migration state and fixes the previously reported missing `referral_code`, missing `updated_at`, level-value mismatch, and missing `earnchat_chat_attempts` errors.
 
-After files 1–6 succeed, confirm the trusted administrator is still active:
+After the installer succeeds, confirm the trusted administrator remains active:
 
 ```sql
-select id,email,is_admin from public.profiles where is_admin=true;
+select id,email,is_admin
+from public.profiles
+where is_admin=true;
 ```
 
 If no administrator is returned, mark only the trusted account:
 
 ```sql
-update public.profiles set is_admin=true where lower(email)=lower('YOUR_ADMIN_EMAIL');
+update public.profiles
+set is_admin=true
+where lower(email)=lower('YOUR_ADMIN_EMAIL');
 ```
 
-Run file 7 and inspect every result set. Empty anomaly result sets are expected. The object-existence result must show `exists = true` for every required table and function. The configuration version must be `2026-07-30-production-release`.
+Then run `earnchat_production_verify.sql`.
+
+Expected verification results:
+
+- every required object row shows `exists = true`;
+- every `problem_count` row shows `0`;
+- configuration version is `2026-07-30-production-install`;
+- at least one trusted administrator is listed.
