@@ -9,5 +9,5 @@ export const sb=sdk.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSe
 function loadFeature(src,key){if(document.querySelector(`script[data-feature="${key}"]`))return;const s=document.createElement('script');s.type='module';s.src=src;s.dataset.feature=key;document.head.appendChild(s)}
 const idle=callback=>window.requestIdleCallback?requestIdleCallback(callback,{timeout:1500}):setTimeout(callback,500);
 idle(()=>{loadFeature('./assets/js/features/analytics.js?v=20260730-production-2','analytics');loadFeature('./assets/js/features/feedback.js?v=20260730-production-2','feedback')});
-const loadQualification=()=>{if(location.hash.includes('profile'))loadFeature('./assets/js/features/qualification.js?v=20260730-production-2','qualification')};
-window.addEventListener('hashchange',loadQualification);loadQualification();
+function loadRouteFeatures(){const hash=location.hash;if(hash.includes('profile'))loadFeature('./assets/js/features/qualification.js?v=20260730-production-2','qualification');if(hash.includes('tasks')||hash.includes('visits'))loadFeature('./assets/js/features/task-status.js?v=20260730-production-2','task-status');if(hash.includes('admin'))loadFeature('./assets/js/admin/enhancements.js?v=20260730-production-2','admin-enhancements')}
+window.addEventListener('hashchange',loadRouteFeatures);loadRouteFeatures();
