@@ -1,6 +1,8 @@
 (function(){
   'use strict';
 
+  window.EARNCHAT_BUILD='2026-07-30-public-ui-3';
+
   function loadRuntimeScript(src, dataKey){
     if(document.querySelector('script[' + dataKey + ']')) return;
     var script=document.createElement('script');
@@ -11,9 +13,54 @@
     document.head.appendChild(script);
   }
 
-  // Critical public layout loads before any Supabase check.
-  // The landing page remains usable even when the backend is disabled or unavailable.
-  loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-2','data-earn-chat-mobile-landing-fix');
+  function openPage(pageId){
+    if(typeof window.pg==='function'){
+      window.pg(pageId);
+      return;
+    }
+    document.querySelectorAll('.page').forEach(function(page){page.classList.remove('on');});
+    var target=document.getElementById(pageId);
+    if(target){target.classList.add('on');window.scrollTo(0,0);}
+  }
+
+  function stabilisePublicUi(){
+    var style=document.getElementById('earnchat-public-stability');
+    if(!style){
+      style=document.createElement('style');
+      style.id='earnchat-public-stability';
+      style.textContent='#land-signup-btn,#land-signup-btn2,#land-login-btn{position:relative!important;z-index:20!important;pointer-events:auto!important;touch-action:manipulation!important}#pg-landing{pointer-events:auto!important}';
+      document.head.appendChild(style);
+    }
+
+    var hero=document.querySelector('#pg-landing .hero p');
+    if(hero) hero.innerHTML='Complete guided conversations and daily activities.<br>Earn <strong style="color:var(--g);">₦2,500</strong> per completed guided chat, within your five-day daily limit.';
+    var stat=document.querySelector('#pg-landing .big-stats .bs-card:first-child .bs-val');
+    if(stat) stat.textContent='₦2,500';
+    var label=document.querySelector('#pg-landing .big-stats .bs-card:first-child .bs-lbl');
+    if(label) label.textContent='Per Guided Chat';
+
+    document.querySelectorAll('#land-signup-btn,#land-signup-btn2').forEach(function(button){
+      if(button.dataset.ecPublicBound) return;
+      button.dataset.ecPublicBound='1';
+      button.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-register');},true);
+    });
+    var login=document.getElementById('land-login-btn');
+    if(login&&!login.dataset.ecPublicBound){
+      login.dataset.ecPublicBound='1';
+      login.addEventListener('click',function(event){event.preventDefault();event.stopPropagation();openPage('pg-login');},true);
+    }
+  }
+
+  function loadPublicExperience(){
+    loadRuntimeScript('./assets/js/mobile-landing-fix.js?v=20260730-3','data-earn-chat-mobile-landing-fix');
+    loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-3','data-earn-chat-professional-five-day');
+    loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-2','data-earn-chat-sponsored-visits');
+    loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260730-2','data-earn-chat-core-flow');
+  }
+
+  loadPublicExperience();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',stabilisePublicUi,{once:true});
+  else stabilisePublicUi();
 
   if(!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_KEY){
     console.warn('Earn Chat Supabase is not connected. Public pages remain available.');
@@ -30,13 +77,8 @@
     }
   });
 
-  function loadBackendUpgrades(){
-    loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
-    loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
-    loadRuntimeScript('./assets/js/core-flow-upgrade.js?v=20260729-1','data-earn-chat-core-flow');
-    loadRuntimeScript('./assets/js/professional-five-day-upgrade.js?v=20260730-2','data-earn-chat-professional-five-day');
-    loadRuntimeScript('./assets/js/sponsored-visits-upgrade.js?v=20260730-1','data-earn-chat-sponsored-visits');
-  }
+  loadRuntimeScript('./assets/js/admin-live-upgrade.js?v=20260729-1','data-earn-chat-admin-live');
+  loadRuntimeScript('./assets/js/share-message-upgrade.js?v=20260729-1','data-earn-chat-share-upgrade');
 
   function showAuthStatus(message,isError){
     var box=document.getElementById('earnchat-auth-runtime-status');
@@ -59,11 +101,7 @@
       var result = await window._supa.auth.getSession();
       if(result.error) throw result.error;
       var session = result && result.data ? result.data.session : null;
-      if(!session || !session.user){
-        var active=document.querySelector('.page.on');
-        if(!active && typeof window.pg==='function') window.pg('pg-landing');
-        return;
-      }
+      if(!session || !session.user) return;
 
       window.S.supaId = session.user.id;
       window.S.email = session.user.email || window.S.email || '';
@@ -97,7 +135,6 @@
     try{ window.saveState(); }catch(error){}
   });
 
-  loadBackendUpgrades();
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restoreEarnChatSession, {once:true});
   else restoreEarnChatSession();
 })();
