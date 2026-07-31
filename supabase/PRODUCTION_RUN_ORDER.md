@@ -1,27 +1,51 @@
 # Earn Chat production SQL run order
 
-Back up the Supabase database before running the production installer.
+Back up the Supabase database before running production SQL.
 
-## One-time compatibility preflight
+## Existing database already installed
 
-Some databases that ran the older economy migration already contain `earnchat_credit(uuid,text,text,uuid,bigint,text,text)` with a `void` return type. PostgreSQL cannot replace that function with the new `bigint` return type.
+Your current database has already run the consolidated installer and the KYC/bulk upgrade. Run only:
 
-Before running the installer, execute this statement once in a separate SQL Editor tab:
+1. `earnchat_production_certification_upgrade_20260731.sql`
+2. `earnchat_production_verify.sql` — read-only verification
+
+The certification upgrade adds:
+
+- open task recovery after refresh;
+- one active task claim per user;
+- task-claim expiry and cancellation;
+- open guided-chat recovery metadata;
+- safe guided-chat cancellation;
+- HTTPS validation for Admin KYC URLs;
+- detailed bulk-action failure results;
+- final database version `2026-07-31-production-certification-r1`.
+
+Expected certification result:
+
+```text
+Earn Chat production certification upgrade completed
+```
+
+## Fresh or reset database
+
+Some older databases contain `earnchat_credit(uuid,text,text,uuid,bigint,text,text)` with a `void` return type. PostgreSQL cannot replace that function with the production `bigint` return type.
+
+Before the installer, execute once in a separate SQL Editor tab:
 
 ```sql
 drop function if exists public.earnchat_credit(uuid,text,text,uuid,bigint,text,text) cascade;
 ```
 
-`CASCADE` removes only old functions that depend on that obsolete helper. The consolidated installer recreates the production versions inside one transaction.
-
-Then run only these two files in the Supabase SQL Editor:
+Then run in this order:
 
 1. `earnchat_production_install.sql`
-2. `earnchat_production_verify.sql` — read-only verification
+2. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
+3. `earnchat_production_certification_upgrade_20260731.sql`
+4. `earnchat_production_verify.sql`
 
-Do not rerun the older multi-file production package. The consolidated installer is designed to recover safely from the partial migration state and fixes the previously reported missing `referral_code`, missing `updated_at`, level-value mismatch, missing `earnchat_chat_attempts`, and legacy function return-type errors.
+Do not rerun the older multi-file production package.
 
-After the installer succeeds, confirm the trusted administrator remains active:
+After SQL succeeds, confirm the trusted administrator remains active:
 
 ```sql
 select id,email,is_admin
@@ -37,11 +61,10 @@ set is_admin=true
 where lower(email)=lower('YOUR_ADMIN_EMAIL');
 ```
 
-Then run `earnchat_production_verify.sql`.
-
-Expected verification results:
+Verification expectations:
 
 - every required object row shows `exists = true`;
 - every `problem_count` row shows `0`;
-- configuration version is `2026-07-30-production-install`;
+- no duplicate open chat or task claim exists;
+- wallet and ledger checks match;
 - at least one trusted administrator is listed.
