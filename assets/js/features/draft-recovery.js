@@ -35,7 +35,7 @@ function scheduleScan(){[80,350,900].forEach(delay=>setTimeout(scan,delay))}
 document.addEventListener('input',event=>{const form=identifyForm(event.target);const config=configFor(form);if(form&&config)scheduleSave(form,config)},true);
 document.addEventListener('change',event=>{const form=identifyForm(event.target);const config=configFor(form);if(form&&config)scheduleSave(form,config)},true);
 document.addEventListener('reset',event=>{const form=event.target,config=configFor(form);if(config)setTimeout(()=>clear(form,false),0)},true);
-document.addEventListener('submit',event=>{const form=event.target,config=configFor(form);if(!config)return;const watch=()=>{if(!form.isConnected){store(config.storage).removeItem(key(form));return}setTimeout(watch,500)};setTimeout(watch,500)},true);
+document.addEventListener('submit',event=>{const form=event.target,config=configFor(form);if(!config)return;let checks=0;const watch=()=>{if(!form.isConnected){store(config.storage).removeItem(key(form));return}checks+=1;if(checks<16)setTimeout(watch,500)};setTimeout(watch,500)},true);
 document.addEventListener('click',event=>{if(event.target.closest('[data-tab],#admin-section-select,[data-go],.edit-task,.edit-mission'))scheduleScan()},true);
 window.addEventListener('hashchange',scheduleScan);
 window.addEventListener('pageshow',scheduleScan);
