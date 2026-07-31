@@ -263,6 +263,74 @@ grant execute on function public.admin_bulk_review_earnchat_kyc(uuid[],text,text
 grant execute on function public.admin_bulk_review_task_claims(uuid[],text,text) to authenticated;
 grant execute on function public.admin_bulk_update_user_control(uuid[],text,text) to authenticated;
 
+-- Server-side payout validation and sanitization.
+create or replace function public.request_earnchat_withdrawal(p_wallet text,p_amount bigint,p_method text,p_payout jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path=public,pg_temp
+as $$
+declare
+ uid uuid:=auth.uid();p public.profiles%rowtype;l public.earnchat_level_settings%rowtype;
+ mn bigint;mx bigint;available bigint;wid uuid;account_name text;account_number text;provider text;clean_payout jsonb;
+begin
+ if uid is null then raise exception 'Authentication required'; end if;
+ select * into p from public.profiles where id=uid for update;
+ if not found then raise exception 'Profile unavailable'; end if;
+ if current_date-p.account_created_at::date<5 or p.kyc_status<>'approved' or p.security_review_required or p.earning_suspended or coalesce(p.fraud_review_status,'clear')<>'clear' then raise exception 'Withdrawal eligibility requirements are not complete'; end if;
+ if jsonb_typeof(coalesce(p_payout,'{}'::jsonb))<>'object' then raise exception 'Invalid payout details'; end if;
+ account_name:=nullif(trim(p_payout->>'account_name'),'');
+ account_number:=regexp_replace(coalesce(p_payout->>'account_number',''),'[^0-9]','','g');
+ provider:=nullif(trim(p_payout->>'provider'),'');
+ if account_name is null or length(account_name)>120 then raise exception 'Enter a valid registered account name'; end if;
+ if p.country='NG' then
+  if p_method<>'bank' then raise exception 'Choose bank transfer'; end if;
+  if account_number!~'^[0-9]{10}$' then raise exception 'Enter a valid 10-digit Nigerian account number'; end if;
+  if provider is null or length(provider)>120 then raise exception 'Enter a valid Nigerian bank name'; end if;
+ elsif p.country='KE' then
+  if p_method='mpesa' then
+   if account_number!~'^254[17][0-9]{8}$' then raise exception 'Enter a valid Kenyan Safaricom number in 254 format'; end if;
+   provider:='Safaricom';
+  elsif p_method='bank' then
+   if account_number!~'^[0-9]{5,30}$' then raise exception 'Enter a valid Kenyan bank account number'; end if;
+   if provider is null or length(provider)>120 then raise exception 'Enter a valid Kenyan bank name'; end if;
+  else raise exception 'Choose M-Pesa or bank';
+  end if;
+ else raise exception 'Unsupported country';
+ end if;
+ select * into l from public.earnchat_level_settings where level_name=p.level_name;
+ if p_wallet='referral' then
+  mn:=public.earnchat_country_amount((select referral_withdraw_min_ngn from public.earnchat_business_settings where id=true),p.country);mx:=9223372036854775807;available:=p.referral_available_balance;
+ elsif p_wallet='work' then
+  mn:=public.earnchat_country_amount(l.withdraw_min_ngn,p.country);mx:=public.earnchat_country_amount(l.withdraw_max_ngn,p.country);available:=p.work_available_balance;
+ else raise exception 'Invalid wallet';
+ end if;
+ if p_amount is null or p_amount<=0 or p_amount<mn or p_amount>mx or p_amount>available then raise exception 'Withdrawal amount is outside the allowed range'; end if;
+ clean_payout:=jsonb_build_object('account_name',account_name,'account_number',account_number,'provider',provider);
+ insert into public.earnchat_withdrawals(user_id,wallet_type,amount,currency,country_code,payout_method,payout_snapshot)
+ values(uid,p_wallet,p_amount,p.currency,p.country,p_method,clean_payout) returning id into wid;
+ if p_wallet='work' then update public.profiles set work_available_balance=work_available_balance-p_amount,updated_at=now() where id=uid;
+ else update public.profiles set referral_available_balance=referral_available_balance-p_amount,updated_at=now() where id=uid;end if;
+ insert into public.earnchat_ledger(user_id,wallet_type,entry_type,source_type,source_id,amount,currency,country_code,status,description)
+ values(uid,p_wallet,'hold','withdrawal',wid,p_amount,p.currency,p.country,'approved','Withdrawal request hold');
+ return jsonb_build_object('ok',true,'withdrawal_id',wid,'status','submitted');
+end$$;
+
+grant execute on function public.request_earnchat_withdrawal(text,bigint,text,jsonb) to authenticated;
+
+-- Ensure every SECURITY DEFINER function uses a safe search path, including functions installed by older versions.
+do $$
+declare f record;
+begin
+ for f in
+  select p.oid::regprocedure as signature
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public' and p.prosecdef
+ loop
+  execute format('alter function %s set search_path=public,pg_temp',f.signature);
+ end loop;
+end$$;
+
 update public.earnchat_business_settings set version='2026-07-31-production-certification-r1',updated_at=now() where id=true;
 commit;
 select 'Earn Chat consolidated KYC, recovery and bulk upgrade completed' as status;
