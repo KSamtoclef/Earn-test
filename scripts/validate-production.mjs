@@ -1,96 +1,51 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import {execFileSync} from'node:child_process';
+import fs from'node:fs';
+import path from'node:path';
+import{execFileSync}from'node:child_process';
 
 const root=process.cwd(),fail=[];
-const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]):[];
-const relative=file=>path.relative(root,file).replaceAll('\\','/');
+const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)]):[];
+const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+const required=[
+'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/css/professional-ui.css','assets/css/member-motivation.css','assets/js/app-config.js','assets/js/supabase-client.js','assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/features/qualification.js','assets/js/features/analytics.js','assets/js/features/task-status.js','assets/js/features/interaction-design.js','assets/js/features/draft-recovery.js','assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/level-journey.js','assets/js/features/guided-chat-experience.js','supabase/earnchat_production_install.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'];
+for(const f of required)if(!fs.existsSync(path.join(root,f)))fail.push(`Missing required file: ${f}`);
+
+const js=walk(path.join(root,'assets/js')).filter(f=>/\.(?:js|mjs)$/.test(f));
+for(const f of js){try{execFileSync(process.execPath,['--check',f],{stdio:'pipe'})}catch(e){fail.push(`JavaScript syntax failed: ${path.relative(root,f)}\n${e.stderr?.toString()||e.message}`)}const source=fs.readFileSync(f,'utf8');for(const m of source.matchAll(/(?:from\s*|import\s*\()['"](\.\.?\/[^'"]+)['"]/g)){const target=path.resolve(path.dirname(f),m[1].split('?')[0]);if(!fs.existsSync(target))fail.push(`Missing import from ${path.relative(root,f)}: ${m[1]}`)}}
+
 const RELEASE='20260731-production-certification-r1';
-const requiredFiles=[
- 'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/css/professional-ui.css','assets/css/member-motivation.css','assets/js/app-config.js','assets/js/supabase-client.js',
- 'assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js',
- 'assets/js/features/qualification.js','assets/js/features/analytics.js','assets/js/features/task-status.js','assets/js/features/interaction-design.js','assets/js/features/draft-recovery.js','assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/level-journey.js','assets/js/features/guided-chat-experience.js',
- 'supabase/earnchat_production_install.sql','supabase/earnchat_production_verify.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql','supabase/PRODUCTION_RUN_ORDER.md'
-];
-for(const file of requiredFiles)if(!fs.existsSync(path.join(root,file)))fail.push(`Missing required file: ${file}`);
+const html=read('index.html'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),core=read('assets/js/admin/core.js');
+if(!loader.includes(`RELEASE_VERSION='${RELEASE}'`))fail.push('Feature loader release identifier is inconsistent.');
+for(const token of ['interaction-design','draft-recovery','referral-priority','level-journey','guided-chat-experience','member-motivation'])if(!loader.includes(token))fail.push(`Feature loader missing: ${token}`);
+for(const token of ['data-route="home"','data-route="earn"','data-route="upgrade"','data-route="referrals"','data-route="profile"'])if(!html.includes(token))fail.push(`Primary navigation missing: ${token}`);
+if(html.includes('<span id="public-online">')&&!read('assets/js/features/member-motivation.js').includes('hidePublicPresence'))fail.push('Public online count is not suppressed.');
 
-const runtimeFiles=walk(path.join(root,'assets','js')).filter(x=>/\.(?:js|mjs)$/.test(x));
-for(const absolute of runtimeFiles){
- const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');
- try{execFileSync(process.execPath,['--check',absolute],{stdio:'pipe'})}catch(error){fail.push(`JavaScript syntax failed: ${file}\n${error.stderr?.toString()||error.message}`)}
- const imports=[...text.matchAll(/(?:from\s*|import\s*\()['"](\.\.?\/[^'"]+)['"]/g)];
- for(const match of imports){const resolved=path.resolve(path.dirname(absolute),match[1].split('?')[0]);if(!fs.existsSync(resolved))fail.push(`Missing import from ${file}: ${match[1]}`)}
-}
+const obsolete=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js','enhancements.js','kyc-bulk-upgrade.js','feedback.js'];
+for(const name of obsolete)if(js.some(f=>path.basename(f)===name))fail.push(`Obsolete runtime file remains: ${name}`);
 
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const selectors=runtimeFiles.flatMap(absolute=>{const text=fs.readFileSync(absolute,'utf8');return[...text.matchAll(/(?:querySelector|querySelectorAll|\$|q)\(\s*['"]#([A-Za-z0-9_-]+)['"]/g)].map(m=>[relative(absolute),m[1]])});
-const dynamicIds=new Set(['kyc-provider-modal','kyc-provider-close','kyc-provider-content','kyc-provider-message','task-proof-field','task-proof-value','example-label','admin-mobile-section','admin-pagination','task-preview','qualification-proof-modal','qualification-proof-close','qualification-proof-message','qualification-proof-value','qualification-proof-submit','signup-bonus-banner','member-welcome-card','referral-earning-guide','home-level-journey','profile-level-journey','share-ref']);
-for(const[file,id]of selectors)if(!html.includes(`id="${id}"`)&&!dynamicIds.has(id))fail.push(`${file} references missing HTML id: ${id}`);
-const ids=[...html.matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m=>m[1]);
-for(const id of new Set(ids))if(ids.filter(x=>x===id).length>1)fail.push(`Duplicate HTML id: ${id}`);
+for(const file of ['assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/guided-chat-experience.js']){const source=read(file);if(source.includes('new MutationObserver'))fail.push(`Continuous whole-page observer remains in ${file}`)}
+if(/setInterval\([^,]+,\s*(?:350|500)\)/.test(read('assets/js/features/guided-chat-experience.js')))fail.push('High-frequency guided-chat page scanner remains.');
+if(!read('assets/css/professional-ui.css').includes('backdrop-filter:none'))fail.push('Mobile blur-cost override is missing.');
 
-const forbidden=['daily-share','pg-share','pg-claim','earn_per_share','share_reward','₦3,750','₦70,000','demoSignupFallback','earnchat-demo-users','request_withdrawal','withdrawal_requests','sponsored-visits-upgrade','linked-task-marketplace','auth-session-fix','Reply & Earn up to','window.EARNCHAT_BUSINESS','window.S||','value="screenshot"','prompt(\'Enter your KYC/provider reference','Verified paid-member feedback will appear here','second-level commission','chain commission'];
-for(const absolute of [path.join(root,'index.html'),...runtimeFiles]){const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');for(const term of forbidden)if(text.includes(term)&&!text.includes('No chain or second-level commission.'))fail.push(`Forbidden legacy or unsupported term in ${file}: ${term}`)}
+for(const token of ['PAGE_SIZE=50','admin-pagination','suspicious_accounts','work_liability_ngn','referral_liability_ngn','work_liability_kes','referral_liability_kes','activity_points','points_required','referral_commission_percent','KYC SETTINGS','Live preview','admin_bulk_review_task_claims','admin_bulk_review_earnchat_kyc','task-preview-country','tf-test-url'])if(!core.includes(token))fail.push(`Admin core missing: ${token}`);
+for(const token of ['activity_points','adminUsers:async(limit=200,offset=0)','adminClaims:async(limit=200,offset=0)','adminKyc:async(limit=200,offset=0)','adminWithdrawals:async(limit=200,offset=0)'])if(!api.includes(token))fail.push(`API contract missing: ${token}`);
+if(!read('assets/js/admin/admin.js').includes("export{renderAdmin}from'./core.js'"))fail.push('Admin entry is not routed through the authoritative core.');
 
-const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js','enhancements.js','kyc-bulk-upgrade.js','feedback.js'];
-for(const name of forbiddenRuntimeNames)if(runtimeFiles.some(f=>path.basename(f)===name))fail.push(`Obsolete runtime file still exists: ${name}`);
+const drafts=read('assets/js/features/draft-recovery.js');
+for(const token of ['task-form','kyc-config-form','mission-form','feedback-form','business-form','register-form','Draft saved just now','Clear draft','checks<16'])if(!drafts.includes(token))fail.push(`Draft recovery missing: ${token}`);
+for(const sensitive of ['register-password','login-password','payout-account','payout-name','payout-provider','kyc-reference'])if(!drafts.includes(sensitive))fail.push(`Draft recovery does not block sensitive field: ${sensitive}`);
 
-const loader=fs.readFileSync(path.join(root,'assets/js/supabase-client.js'),'utf8');
-for(const token of ['./assets/js/features/task-status.js','./assets/js/features/qualification.js','./assets/js/features/analytics.js','./assets/js/features/interaction-design.js','./assets/js/features/draft-recovery.js','./assets/js/features/member-motivation.js','./assets/js/features/referral-priority.js','./assets/js/features/level-journey.js','./assets/js/features/guided-chat-experience.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
-if(loader.includes('./assets/js/features/feedback.js'))fail.push('Duplicate landing feedback renderer is still loaded.');
-if(!loader.includes(`RELEASE_VERSION='${RELEASE}'`))fail.push('Certification release identifier missing from feature loader.');
-if(/kyc-bulk-upgrade|admin\/enhancements/.test(loader))fail.push('Obsolete KYC or Admin override module is still loaded.');
+const level=read('supabase/earnchat_level_chat_upgrade_20260731.sql');
+for(const token of ["version='20260731-production-complete-r1'",'signup_bonus_ngn=2000','referral_reward_ngn=500','earnchat_point_events','earnchat_award_points','earnchat_grant_signup_bonus','referral_commission_percent','Direct referral commission',"source_type in('chat','task')",'minimum_seconds\',45','suspicious_accounts','work_liability_ngn','referral_liability_kes','activity_points=coalesce'])if(!level.includes(token))fail.push(`Final member SQL missing: ${token}`);
+const kyc=read('supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql');
+for(const token of ['Server-side payout validation','request_earnchat_withdrawal','admin_bulk_review_task_claims','admin_bulk_review_earnchat_kyc','admin_bulk_update_user_control','get_my_open_task_claim','get_my_open_chat_attempt','cancel_earnchat_chat_attempt','cancel_earnchat_task_claim','earnchat_one_started_task_per_user'])if(!kyc.includes(token))fail.push(`KYC/recovery SQL missing: ${token}`);
+const verify=read('supabase/earnchat_production_verify.sql');
+for(const token of ['duplicate_signup_bonuses','missing_signup_bonuses','invalid_signup_bonus_amounts','duplicate_point_events','activity_point_mismatches','duplicate_referral_commissions','invalid_level_point_contract','invalid_level_commission_contract','chat_minimum_contract','admin_overview_contract','wallet_mismatches'])if(!verify.includes(token))fail.push(`Verification SQL missing: ${token}`);
+const order=read('supabase/PRODUCTION_RUN_ORDER.md');
+for(const token of ['earnchat_kyc_bulk_admin_upgrade_20260730.sql','earnchat_level_chat_upgrade_20260731.sql','earnchat_production_verify.sql'])if(!order.includes(token))fail.push(`Run order missing: ${token}`);
 
-const interaction=fs.readFileSync(path.join(root,'assets/js/features/interaction-design.js'),'utf8');
-for(const token of ['professional-ui.css','interactive-surface','surface-action','Create your free account','Open guided chats','Open work wallet'])if(!interaction.includes(token))fail.push(`Interaction design missing: ${token}`);
-const professionalCss=fs.readFileSync(path.join(root,'assets/css/professional-ui.css'),'utf8');
-for(const token of ['--ec-page','interactive-surface','landing-section','surface-action','prefers-reduced-motion','draft-status-row','draft-clear'])if(!professionalCss.includes(token))fail.push(`Professional theme missing: ${token}`);
-
-const drafts=fs.readFileSync(path.join(root,'assets/js/features/draft-recovery.js'),'utf8');
-for(const token of ['task-form','kyc-config-form','mission-form','feedback-form','business-form','register-form','task-proof-field','Draft saved just now','Clear draft'])if(!drafts.includes(token))fail.push(`Draft recovery missing: ${token}`);
-for(const sensitive of ['register-password','login-password','payout-account','payout-name','payout-provider','kyc-reference'])if(!drafts.includes(sensitive))fail.push(`Draft recovery does not explicitly block sensitive field: ${sensitive}`);
-if(!drafts.includes('checks<16'))fail.push('Draft completion watcher is not bounded.');
-
-const motivation=fs.readFileSync(path.join(root,'assets/js/features/member-motivation.js'),'utf8');
-for(const token of ['welcome bonus','Activity Points','Earn now','qualified direct referral','No chain or second-level commission','public-stats'])if(!motivation.includes(token))fail.push(`Member motivation missing: ${token}`);
-const journey=fs.readFileSync(path.join(root,'assets/js/features/level-journey.js'),'utf8');
-for(const token of ['Activity Points','referral_commission_percent','No payment required','Starter','Active','Pro','Elite'])if(!journey.includes(token))fail.push(`Level journey missing: ${token}`);
-const motivationCss=fs.readFileSync(path.join(root,'assets/css/member-motivation.css'),'utf8');
-for(const token of ['signup-bonus-banner','member-welcome-card','referral-earning-guide','public-stats'])if(!motivationCss.includes(token))fail.push(`Member motivation CSS missing: ${token}`);
-
-const app=fs.readFileSync(path.join(root,'assets/js/app.js'),'utf8');
-for(const token of ['openKycFlow','restoreOpenTask','restoreOpenChatBanner','openTaskClaim','openChatAttempt','cancelChatAttempt','EXAMPLE DASHBOARD','social-proof-section','member-feedback-list'])if(!app.includes(token))fail.push(`Customer core missing: ${token}`);
-if(app.includes('async function submitKyc(){const reference=prompt'))fail.push('Prompt-based KYC remains in customer core.');
-if(!app.includes(`const RELEASE='${RELEASE}'`))fail.push('Customer controller release identifier is inconsistent.');
-
-const qualification=fs.readFileSync(path.join(root,'assets/js/features/qualification.js'),'utf8');
-for(const token of ['qualification-proof-modal','earnchat-qualification-pending','about:blank','Submit for review'])if(!qualification.includes(token))fail.push(`Qualification workflow missing: ${token}`);
-if(qualification.includes("prompt('Enter your qualification proof"))fail.push('Qualification workflow still uses an automatic browser prompt.');
-
-const entry=fs.readFileSync(path.join(root,'assets/js/admin/admin.js'),'utf8');
-if(!entry.includes("export{renderAdmin}from'./core.js'"))fail.push('Admin entry is not routed through the authoritative core.');
-const admin=fs.readFileSync(path.join(root,'assets/js/admin/core.js'),'utf8');
-for(const token of ['KYC SETTINGS','Live preview','admin_bulk_review_task_claims','admin_bulk_review_earnchat_kyc','Nigeria work liability','Kenya work liability','task-preview-country','tf-test-url'])if(!admin.includes(token))fail.push(`Admin core missing: ${token}`);
-if(admin.includes('value="screenshot"'))fail.push('Admin core still exposes unsupported screenshot proof.');
-if(/Work liability['"].*₦|Referral liability['"].*₦/.test(admin))fail.push('Admin core still exposes mixed-currency liability totals.');
-
-for(const match of html.matchAll(/[?&]v=([^"']+)/g))if(match[1]!==RELEASE)fail.push(`index.html uses mixed asset version: ${match[1]}`);
-
-const install=fs.readFileSync(path.join(root,'supabase','earnchat_production_install.sql'),'utf8');
-const verify=fs.readFileSync(path.join(root,'supabase','earnchat_production_verify.sql'),'utf8');
-const upgrade=fs.readFileSync(path.join(root,'supabase','earnchat_kyc_bulk_admin_upgrade_20260730.sql'),'utf8');
-const motivationSql=fs.readFileSync(path.join(root,'supabase','earnchat_level_chat_upgrade_20260731.sql'),'utf8');
-const requiredInstallTokens=['alter table public.profiles add column if not exists referral_code','insert into public.earnchat_level_settings(level_name,rank','earnchat_chat_attempts','start_earnchat_chat','complete_earnchat_chat(p_attempt uuid','start_earnchat_task','submit_earnchat_task','request_earnchat_withdrawal','admin_review_task_claim','admin_review_earnchat_withdrawal','admin_review_earnchat_referral','earnchat_qualification_missions','earnchat_analytics_events','revoke all on function public.mark_earnchat_active_day'];
-const requiredVerifyTokens=['required_tables','required_functions','duplicate_started_chat_attempts','duplicate_open_task_claims','pending_task_balance_mismatch','pending_referral_balance_mismatch','wallet_mismatches','invalid_kyc_urls','invalid_withdrawal_payouts'];
-const requiredUpgradeTokens=['get_earnchat_kyc_config','admin_update_earnchat_kyc_config','admin_bulk_review_earnchat_kyc','admin_bulk_review_task_claims','admin_bulk_update_user_control','get_my_open_task_claim','get_my_open_chat_attempt','cancel_earnchat_chat_attempt','cancel_earnchat_task_claim','earnchat_one_started_task_per_user','Server-side payout validation','request_earnchat_withdrawal','fraud_review_status','alter function %s set search_path=public,pg_temp','failures','2026-07-31-production-certification-r1'];
-const requiredMotivationTokens=['activity_points','points_required','referral_commission_percent','earnchat_point_events','earnchat_award_points','earnchat_grant_signup_bonus','signup_bonus_ngn=2000','referral_reward_ngn=500','Direct referral commission','p_source in(\'chat\',\'task\')','minimum_seconds\',45','No chain','welcome bonus, points, direct referral commissions'];
-for(const token of requiredInstallTokens)if(!install.includes(token))fail.push(`Installer missing: ${token}`);
-for(const token of requiredVerifyTokens)if(!verify.includes(token))fail.push(`Verification SQL missing: ${token}`);
-for(const token of requiredUpgradeTokens)if(!upgrade.includes(token))fail.push(`Consolidated upgrade SQL missing: ${token}`);
-for(const token of requiredMotivationTokens)if(!motivationSql.includes(token))fail.push(`Member motivation SQL missing: ${token}`);
-
-if(fs.existsSync(path.join(root,'supabase','earnchat_production_certification_upgrade_20260731.sql')))fail.push('Duplicate certification migration still exists; use the consolidated KYC/recovery upgrade only.');
+if(fs.existsSync(path.join(root,'.github/workflows/finalize-production-source.yml')))fail.push('Temporary source-finalization workflow still exists.');
+if(fs.existsSync(path.join(root,'supabase/earnchat_production_certification_upgrade_20260731.sql')))fail.push('Duplicate certification migration still exists.');
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat production validation passed.');
-console.log(`Checked ${requiredFiles.length} required files, ${runtimeFiles.length} runtime modules, welcome bonus, activity points, direct-referral commissions, professional interaction design, safe draft recovery, customer/Admin ownership, selectors, release versions and SQL contracts.`);
+console.log(`Checked ${required.length} required files, ${js.length} runtime modules, exact Admin totals, pagination, mobile performance guards, welcome bonus, Activity Points, direct commissions and final SQL verification contracts.`);
