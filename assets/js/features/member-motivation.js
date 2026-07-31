@@ -2,7 +2,8 @@ import{api}from'../api.js';
 import{COUNTRY_FALLBACK,countryFromStorage,money}from'../app-config.js';
 
 const $=(selector,root=document)=>root.querySelector(selector);
-let loading=false,lastState=null;
+let loading=false,lastState=null,lastLoadedAt=0,enhanceTimer=null;
+const CACHE_MS=8000;
 
 function amount(base,country,multiplier=.6){return Math.round(Number(base||0)*(country==='KE'?Number(multiplier):1))}
 function currentCountry(state){return state?.profile?.country||countryFromStorage()}
@@ -21,13 +22,12 @@ function checklist(state){const p=state.profile||{},todayChats=Number(state.toda
 function renderHome(state){const home=$('#view-home .container');if(!home)return;let card=$('#member-welcome-card');if(!card){card=document.createElement('section');card.id='member-welcome-card';card.className='member-welcome-card';const balance=$('.balance-card',home);balance?.insertAdjacentElement('afterend',card)}const p=state.profile||{},settings=state.config?.settings||{},bonus=formatBase(settings.signup_bonus_ngn||2000,state),points=Number(p.activity_points||0);card.innerHTML=`<header><div><span class="eyebrow">YOUR START</span><h2>${bonus} welcome bonus</h2><p>Your real earnings continue adding to this balance.</p></div><div class="point-orb"><b>${points}</b><small>POINTS</small></div></header><ul>${checklist(state)}</ul><div class="motivation-actions"><button class="primary" data-go="earn" type="button">Earn now</button><button class="secondary" data-go="profile" type="button">View level progress</button></div>`}
 function commissionRate(state){const p=state.profile||{},level=state.config?.levels?.[p.level_name||'Starter']||{};return Number(level.referral_commission_percent||1)}
 function renderReferrals(state){const view=$('#view-referrals .container');if(!view)return;sessionStorage.setItem('earnchat-referral-opened','1');const settings=state.config?.settings||{},reward=formatBase(settings.referral_reward_ngn||500,state),rate=commissionRate(state);let guide=$('#referral-earning-guide');if(!guide){guide=document.createElement('section');guide.id='referral-earning-guide';guide.className='referral-earning-guide';const balance=$('.balance-card',view);balance?.insertAdjacentElement('afterend',guide)}guide.innerHTML=`<span class="eyebrow">DIRECT REFERRALS</span><h2>Earn ${reward} per qualified member</h2><p>You also receive <strong>${rate}%</strong> of each qualified direct referral’s approved chat and task earnings. Their own earnings are never reduced.</p><ol><li><span>1</span>Share your personal link</li><li><span>2</span>Your friend registers and becomes active</li><li><span>3</span>Admin confirms qualification</li><li><span>4</span>Your reward and future direct commission are recorded</li></ol><small>No chain or second-level commission.</small>`}
-async function loadState(){if(loading)return lastState;loading=true;try{lastState=await api.state();return lastState}catch{return lastState}finally{loading=false}}
-async function enhance(){hidePublicPresence();const hash=location.hash;if(hash.includes('landing')||hash.includes('register')){let config=null;try{config=await api.business()}catch{}const state={profile:{country:countryFromStorage()},config};renderLanding(state);renderSignup(state);return}if(!hash.includes('home')&&!hash.includes('referrals'))return;const state=await loadState();if(!state)return;if(hash.includes('home'))renderHome(state);if(hash.includes('referrals'))renderReferrals(state)}
-function schedule(){[50,220,700].forEach(delay=>setTimeout(enhance,delay))}
+async function loadState(force=false){if(!force&&lastState&&Date.now()-lastLoadedAt<CACHE_MS)return lastState;if(loading)return lastState;loading=true;try{lastState=await api.state();lastLoadedAt=Date.now();window.dispatchEvent(new CustomEvent('earnchat:member-state',{detail:lastState}));return lastState}catch{return lastState}finally{loading=false}}
+async function enhance(force=false){hidePublicPresence();const hash=location.hash;if(hash.includes('landing')||hash.includes('register')){let config=null;try{config=await api.business()}catch{}const state={profile:{country:countryFromStorage()},config};renderLanding(state);renderSignup(state);return}if(!hash.includes('home')&&!hash.includes('referrals')&&!hash.includes('profile'))return;const state=await loadState(force);if(!state)return;if(hash.includes('home'))renderHome(state);if(hash.includes('referrals'))renderReferrals(state)}
+function schedule(delay=80,force=false){clearTimeout(enhanceTimer);enhanceTimer=setTimeout(()=>enhance(force),delay)}
 
 ensureStyles();
-new MutationObserver(()=>{hidePublicPresence()}).observe(document.body,{childList:true,subtree:true});
-window.addEventListener('hashchange',()=>{lastState=null;schedule()});
-window.addEventListener('pageshow',schedule);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastState=null;schedule()}});
-schedule();
+window.addEventListener('hashchange',()=>schedule(70,false));
+window.addEventListener('pageshow',()=>schedule(70,false));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(70,true)});
+schedule(0,true);
