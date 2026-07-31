@@ -13,13 +13,16 @@ function addTheme(){
  document.head.appendChild(link);
 }
 
-function destination(publicRoute,privateRoute=publicRoute){return authenticated?privateRoute:'register'}
 function activate(route){location.hash=`#/${authenticated?route:'register'}`}
 
 function makeInteractive(element,route,label){
  if(!element||element.dataset.interactiveReady==='1')return;
  element.dataset.interactiveReady='1';
  element.dataset.surfaceRoute=route;
+ if(element.querySelector('button,a,input,select,textarea')){
+  element.classList.add('designed-surface');
+  return;
+ }
  element.classList.add('interactive-surface');
  element.setAttribute('role','button');
  element.setAttribute('tabindex','0');
@@ -30,11 +33,7 @@ function makeInteractive(element,route,label){
   action.textContent=label;
   element.appendChild(action);
  }
- const open=event=>{
-  if(event.target.closest('button,a,input,select,textarea,label'))return;
-  activate(route);
- };
- element.addEventListener('click',open);
+ element.addEventListener('click',()=>activate(route));
  element.addEventListener('keydown',event=>{
   if(event.key!=='Enter'&&event.key!==' ')return;
   event.preventDefault();
@@ -89,7 +88,7 @@ function enhanceHome(){
 function enhanceCustomerPages(){
  makeInteractive($('.balance-card','#view-referrals'),'referrals','View referral progress');
  makeInteractive($('.profile-hero','#view-profile'),'profile','Review account profile');
- $$('.list-card.partner-card').forEach(card=>card.classList.add('interactive-card-ready'));
+ $$('.list-card.partner-card').forEach(card=>card.classList.add('designed-surface'));
 }
 
 function enhance(){
