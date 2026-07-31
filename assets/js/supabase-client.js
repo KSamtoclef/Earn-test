@@ -12,6 +12,8 @@ const idle=callback=>window.requestIdleCallback?requestIdleCallback(callback,{ti
 loadFeature('./assets/js/features/interaction-design.js','interaction-design');
 loadFeature('./assets/js/features/draft-recovery.js','draft-recovery');
 loadFeature('./assets/js/features/referral-priority.js','referral-priority');
+loadFeature('./assets/js/features/level-journey.js','level-journey');
+loadFeature('./assets/js/features/guided-chat-experience.js','guided-chat-experience');
 idle(()=>loadFeature('./assets/js/features/analytics.js','analytics'));
 function loadRouteFeatures(){const hash=location.hash;if(hash.includes('profile'))loadFeature('./assets/js/features/qualification.js','qualification');if(hash.includes('tasks')||hash.includes('visits'))loadFeature('./assets/js/features/task-status.js','task-status')}
 window.addEventListener('hashchange',loadRouteFeatures);loadRouteFeatures();
