@@ -2,59 +2,55 @@
 
 Back up the Supabase database before running production SQL.
 
-## Existing database already installed
+## Existing database used for the current live test
 
-Run the current upgrades in this order, then verification:
+Run these idempotent upgrades in this order:
 
 1. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
 2. `earnchat_level_chat_upgrade_20260731.sql`
-3. `earnchat_starter_tasks_seed.sql` — optional paused starter tasks
-4. `earnchat_production_verify.sql` — read-only verification
+3. `earnchat_production_verify.sql` — read-only verification
 
-The KYC/recovery upgrade is safe to rerun and includes:
+Optional paused starter tasks:
 
-- country-specific KYC configuration and HTTPS validation;
-- bulk KYC, task-claim and user-control actions;
-- task and guided-chat recovery;
-- one open task/chat attempt per user;
-- server-side payout validation and hardened function search paths.
+4. `earnchat_starter_tasks_seed.sql`
 
-The member-motivation upgrade is also safe to rerun and includes:
-
-- real one-time ₦2,000 / KSh1,200 welcome bonuses for new and existing profiles;
-- auditable Activity Points with duplicate protection;
-- Starter, Active, Pro and Elite point thresholds;
-- Active earned through 4 account days, 4 active days, 8 approved chats, 6 approved tasks, 50 points and submitted KYC;
-- direct qualified-referral reward of ₦500 / KSh300;
-- direct-referral commissions of 1%, 3%, 5% and 7% by the inviter's current level;
-- no chain or second-level commission;
-- 45-second, four-reply guided conversations.
-
-Expected member-motivation result:
+Expected result from the final member upgrade:
 
 ```text
-Earn Chat welcome bonus, points, direct referral commissions and 45-second chat upgrade completed
+Earn Chat production-complete bonus, points, commissions, 45-second chat and Admin overview upgrade completed
 ```
+
+The final database version must be:
+
+```text
+20260731-production-complete-r1
+```
+
+Verification requirements:
+
+- every object row shows `exists = true`;
+- every `problem_count` row shows `0`;
+- at least one trusted administrator is listed;
+- signup bonuses are present exactly once and use the correct country amount;
+- Activity Points match the point-event ledger;
+- no duplicate direct-referral commission exists;
+- the guided-chat server minimum is 45 seconds;
+- the Admin overview function contains exact country-separated liabilities and suspicious-account totals.
 
 ## Fresh or reset database
 
-Some older databases contain `earnchat_credit(uuid,text,text,uuid,bigint,text,text)` with a `void` return type. PostgreSQL cannot replace that function with the production `bigint` return type.
-
-Before the installer, execute once in a separate SQL Editor tab:
-
-```sql
-drop function if exists public.earnchat_credit(uuid,text,text,uuid,bigint,text,text) cascade;
-```
-
-Then run:
+Run:
 
 1. `earnchat_production_install.sql`
 2. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
 3. `earnchat_level_chat_upgrade_20260731.sql`
-4. `earnchat_starter_tasks_seed.sql` — optional
-5. `earnchat_production_verify.sql`
+4. `earnchat_production_verify.sql`
 
-After SQL succeeds, confirm the trusted administrator remains active:
+The current installer creates the base production schema. The two current upgrades then apply the final KYC/recovery, bonus, points, commission, earned-level, chat-timing and exact Admin-overview contracts.
+
+Do not run the removed certification migration or older multi-file production packages.
+
+After SQL succeeds, confirm the trusted administrator:
 
 ```sql
 select id,email,is_admin
@@ -62,28 +58,4 @@ from public.profiles
 where is_admin=true;
 ```
 
-Confirm bonuses and points are not duplicated:
-
-```sql
-select user_id,count(*)
-from public.earnchat_ledger
-where source_type='signup_bonus' and entry_type='credit'
-group by user_id
-having count(*)>1;
-
-select user_id,source_type,source_key,count(*)
-from public.earnchat_point_events
-group by user_id,source_type,source_key
-having count(*)>1;
-```
-
-Both checks should return no rows.
-
-Verification expectations:
-
-- every required object row shows `exists = true`;
-- every `problem_count` row shows `0`;
-- no duplicate open chat or task claim exists;
-- no invalid KYC URL exists;
-- wallet and ledger checks match;
-- at least one trusted administrator is listed.
+Only a trusted account should be marked as an administrator.
