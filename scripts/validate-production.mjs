@@ -9,7 +9,7 @@ const RELEASE='20260731-production-certification-r1';
 const requiredFiles=[
  'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/js/app-config.js','assets/js/supabase-client.js',
  'assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js',
- 'assets/js/features/qualification.js','assets/js/features/feedback.js','assets/js/features/analytics.js','assets/js/features/task-status.js',
+ 'assets/js/features/qualification.js','assets/js/features/analytics.js','assets/js/features/task-status.js',
  'supabase/earnchat_production_install.sql','supabase/earnchat_production_verify.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 for(const file of requiredFiles)if(!fs.existsSync(path.join(root,file)))fail.push(`Missing required file: ${file}`);
@@ -29,19 +29,20 @@ for(const[file,id]of selectors)if(!html.includes(`id="${id}"`)&&!dynamicIds.has(
 const ids=[...html.matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m=>m[1]);
 for(const id of new Set(ids))if(ids.filter(x=>x===id).length>1)fail.push(`Duplicate HTML id: ${id}`);
 
-const forbidden=['daily-share','pg-share','pg-claim','earn_per_share','share_reward','₦3,750','₦70,000','demoSignupFallback','earnchat-demo-users','request_withdrawal','withdrawal_requests','sponsored-visits-upgrade','linked-task-marketplace','auth-session-fix','Reply & Earn up to','window.EARNCHAT_BUSINESS','window.S||','value="screenshot"','prompt(\'Enter your KYC/provider reference'];
+const forbidden=['daily-share','pg-share','pg-claim','earn_per_share','share_reward','₦3,750','₦70,000','demoSignupFallback','earnchat-demo-users','request_withdrawal','withdrawal_requests','sponsored-visits-upgrade','linked-task-marketplace','auth-session-fix','Reply & Earn up to','window.EARNCHAT_BUSINESS','window.S||','value="screenshot"','prompt(\'Enter your KYC/provider reference','Verified paid-member feedback will appear here'];
 for(const absolute of [path.join(root,'index.html'),...runtimeFiles]){const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');for(const term of forbidden)if(text.includes(term))fail.push(`Forbidden legacy or unsupported term in ${file}: ${term}`)}
 
-const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js','enhancements.js','kyc-bulk-upgrade.js'];
+const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js','enhancements.js','kyc-bulk-upgrade.js','feedback.js'];
 for(const name of forbiddenRuntimeNames)if(runtimeFiles.some(f=>path.basename(f)===name))fail.push(`Obsolete runtime file still exists: ${name}`);
 
 const loader=fs.readFileSync(path.join(root,'assets/js/supabase-client.js'),'utf8');
-for(const token of ['./assets/js/features/task-status.js','./assets/js/features/qualification.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
+for(const token of ['./assets/js/features/task-status.js','./assets/js/features/qualification.js','./assets/js/features/analytics.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
+if(loader.includes('./assets/js/features/feedback.js'))fail.push('Duplicate landing feedback renderer is still loaded.');
 if(!loader.includes(`RELEASE_VERSION='${RELEASE}'`))fail.push('Certification release identifier missing from feature loader.');
 if(/kyc-bulk-upgrade|admin\/enhancements/.test(loader))fail.push('Obsolete KYC or Admin override module is still loaded.');
 
 const app=fs.readFileSync(path.join(root,'assets/js/app.js'),'utf8');
-for(const token of ['openKycFlow','restoreOpenTask','restoreOpenChatBanner','openTaskClaim','openChatAttempt','cancelChatAttempt','EXAMPLE DASHBOARD'])if(!app.includes(token))fail.push(`Customer core missing: ${token}`);
+for(const token of ['openKycFlow','restoreOpenTask','restoreOpenChatBanner','openTaskClaim','openChatAttempt','cancelChatAttempt','EXAMPLE DASHBOARD','social-proof-section','member-feedback-list'])if(!app.includes(token))fail.push(`Customer core missing: ${token}`);
 if(app.includes('async function submitKyc(){const reference=prompt'))fail.push('Prompt-based KYC remains in customer core.');
 if(!app.includes(`const RELEASE='${RELEASE}'`))fail.push('Customer controller release identifier is inconsistent.');
 
