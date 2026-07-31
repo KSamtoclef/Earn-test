@@ -12,14 +12,16 @@ for(const file of js){try{execFileSync(process.execPath,['--check',file],{stdio:
 
 const config=read('assets/js/app-config.js'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),journey=read('assets/js/features/level-journey.js'),chat=read('assets/js/features/guided-chat-experience.js'),motivation=read('assets/js/features/member-motivation.js'),levelCss=read('assets/css/level-chat-experience.css'),memberCss=read('assets/css/member-motivation.css'),core=read('assets/js/admin/core.js'),html=read('index.html');
 if(!config.includes("'upgrade'"))fail.push('ROUTES does not contain upgrade.');
-if(!loader.includes("RELEASE_VERSION='20260731-launch-lite-r1'"))fail.push('Final lightweight release identifier is missing.');
-for(const token of ['loadedStyles=new Map','loadedFeatures=new Map','CUSTOMER_ROUTES','requestIdleCallback','route===\'admin\'','levelFeature(false)'])if(!loader.includes(token))fail.push(`Route-driven loader missing: ${token}`);
+if(!loader.includes("RELEASE_VERSION='20260731-launch-lite-r2'"))fail.push('Final lightweight release identifier is missing.');
+for(const token of ['loadedStyles=new Map','loadedFeatures=new Map','CUSTOMER_ROUTES','requestIdleCallback','levelFeature(false)'])if(!loader.includes(token))fail.push(`Route-driven loader missing: ${token}`);
+for(const pathToken of ["loadFeature('./features/level-journey.js'","loadFeature('./features/guided-chat-experience.js'","loadFeature('./features/member-motivation.js'","loadFeature('./features/referral-priority.js'"])if(!loader.includes(pathToken))fail.push(`Correct module-relative feature path missing: ${pathToken}`);
+if(loader.includes("loadFeature('./assets/js/features/"))fail.push('Page-relative dynamic import path remains in the module loader.');
 if(loader.includes('interaction-design.js'))fail.push('Obsolete broad interaction module is still loaded.');
 if(fs.existsSync(path.join(root,'assets/js/features/interaction-design.js')))fail.push('Obsolete broad interaction module still exists.');
 if(loader.includes('await Promise.all(['))fail.push('Startup still blocks on all customer assets.');
 
-for(const token of ['MEMBER_CACHE_MS=10000','memberPromise','window.dispatchEvent(new CustomEvent(\'earnchat:member-state\'','invalidateMemberState','ADMIN_CACHE_MS=12000','adminOverviewPromise','adminClaims:async(limit=50','adminUsers:async(limit=50','adminWithdrawals:async(limit=50'])if(!api.includes(token))fail.push(`Shared API/cache contract missing: ${token}`);
-for(const token of ["section.id='view-upgrade'",'next-benefits','Do these next','upgrade-disclosure','Compare all levels','How Activity Points work','earn-activity-hub','Guided chats','Sponsored visits','Referrals'])if(!journey.includes(token))fail.push(`Compact Upgrade/Earn journey missing: ${token}`);
+for(const token of ['MEMBER_CACHE_MS=10000','memberPromise','earnchat:member-state','invalidateMemberState','ADMIN_CACHE_MS=12000','adminOverviewPromise','adminClaims:async(limit=50','adminUsers:async(limit=50','adminWithdrawals:async(limit=50'])if(!api.includes(token))fail.push(`Shared API/cache contract missing: ${token}`);
+for(const token of ["section.id='view-upgrade'",'next-benefits','Do these next','upgrade-disclosure','Compare all levels','How Activity Points work','earn-activity-hub','Guided chats','Sponsored visits','Referrals','data-earn-action="chats"','primaryAction'])if(!journey.includes(token))fail.push(`Compact Upgrade/Earn journey missing: ${token}`);
 for(const level of ['Starter','Active','Pro','Elite'])if(!journey.includes(`'${level}'`))fail.push(`Upgrade journey missing ${level}.`);
 if((journey.match(/<details/g)||[]).length<3)fail.push('Upgrade details are not collapsed into three disclosure sections.');
 if(journey.includes('pageshow')||journey.includes('visibilitychange'))fail.push('Upgrade still forces background/visibility refreshes.');
@@ -32,10 +34,12 @@ for(const file of ['assets/js/features/member-motivation.js','assets/js/features
 for(const token of ['content-visibility:auto','upgrade-disclosure','benefit-chips','earn-option-grid','chat-next-grid','backdrop-filter:none!important','safe-area-inset-bottom','prefers-reduced-motion'])if(!levelCss.includes(token))fail.push(`Lightweight UI CSS missing: ${token}`);
 if(memberCss.includes('member-welcome-card')||memberCss.includes('linear-gradient')||!memberCss.includes('box-shadow:none'))fail.push('Motivation CSS still contains duplicate or expensive Home styling.');
 
+for(const token of ['20260731-launch-lite-r2','About 45 seconds','00:00 / 00:45','data-route="upgrade"','data-route="referrals"'])if(!html.includes(token))fail.push(`Correct first-paint contract missing: ${token}`);
+for(const stale of ['About 2 minutes','00:00 / 02:00','timer reaches two minutes'])if(html.includes(stale))fail.push(`Stale first-paint wording remains: ${stale}`);
 const routeMatch=config.match(/ROUTES=\[([^\]]+)\]/),routes=new Set((routeMatch?.[1]||'').match(/'([^']+)'/g)?.map(value=>value.slice(1,-1))||[]),sources=[html,...js.map(file=>fs.readFileSync(file,'utf8'))].join('\n');
 for(const match of sources.matchAll(/data-go=["']([^"']+)["']/g))if(!routes.has(match[1]))fail.push(`Invalid data-go route: ${match[1]}`);
 for(const match of sources.matchAll(/data-route=["']([^"']+)["']/g))if(!routes.has(match[1]))fail.push(`Invalid data-route route: ${match[1]}`);
-if(html.includes('<span id="public-online">')&&!motivation.includes('hidePublicPresence'))fail.push('Public online count is not suppressed.');
+if(html.includes('id="public-online"'))fail.push('Public online counter remains in first-paint HTML.');
 
 for(const token of ['PAGE_SIZE=50','admin-pagination','suspicious_accounts','work_liability_ngn','referral_liability_kes','activity_points','points_required','referral_commission_percent'])if(!core.includes(token))fail.push(`Admin core missing: ${token}`);
 if(!read('assets/js/admin/admin.js').includes("export{renderAdmin}from'./core.js'"))fail.push('Admin entry is not authoritative.');
@@ -48,4 +52,4 @@ for(const file of ['.github/workflows/final-authoritative-cleanup.yml','.github/
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat final launch validation passed.');
-console.log(`Checked ${required.length} required files, ${js.length} runtime modules, shared state, route-only loading, compact Upgrade, multi-option Earn, 45-second chat completion, Admin pagination and database contracts.`);
+console.log(`Checked ${required.length} required files, ${js.length} runtime modules, shared state, corrected dynamic imports, compact Upgrade, multi-option Earn, 45-second chat completion, Admin pagination and database contracts.`);
