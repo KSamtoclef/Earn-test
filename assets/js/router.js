@@ -1,5 +1,4 @@
 import{ROUTES}from'./app-config.js';
-import('./kyc-bulk-upgrade.js?v=20260730-kyc-bulk-1').catch(error=>console.error('KYC and bulk admin module failed:',error));
 let isAuthenticated=()=>false,onRoute=()=>{};
 const publicRoutes=new Set(['landing','register','login']);
 const navHiddenRoutes=new Set(['landing','register','login','chat','admin']);
