@@ -1,6 +1,6 @@
 import{SUPABASE_URL,SUPABASE_ANON_KEY}from'./app-config.js';
 
-export const RELEASE_VERSION='20260731-launch-lite-r1';
+export const RELEASE_VERSION='20260731-launch-lite-r2';
 const loadedStyles=new Map(),loadedFeatures=new Map();
 
 function loadStyle(href,key){
@@ -35,18 +35,18 @@ ensureSdk().then(sdk=>{sb=sdk.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:
 const idle=(callback,timeout=1800)=>window.requestIdleCallback?requestIdleCallback(callback,{timeout}):setTimeout(callback,350);
 const routeName=()=>location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
 const CUSTOMER_ROUTES=new Set(['home','earn','chat','upgrade','tasks','visits','referrals','withdraw','profile']);
-function levelFeature(immediate=false){const style=loadStyle('./assets/css/level-chat-experience.css','level-chat-experience');const run=()=>loadFeature('./assets/js/features/level-journey.js','level-journey',style);immediate?run():idle(run,900)}
+function levelFeature(immediate=false){const style=loadStyle('./assets/css/level-chat-experience.css','level-chat-experience');const run=()=>loadFeature('./features/level-journey.js','level-journey',style);immediate?run():idle(run,900)}
 function loadRouteFeatures(){
  const route=routeName();
  if(route==='upgrade')levelFeature(true);else if(CUSTOMER_ROUTES.has(route))levelFeature(false);
- if(['home','earn','chat'].includes(route))loadFeature('./assets/js/features/guided-chat-experience.js','guided-chat-experience');
- if(['landing','register','home','referrals'].includes(route)){const style=loadStyle('./assets/css/member-motivation.css','member-motivation');loadFeature('./assets/js/features/member-motivation.js','member-motivation',style)}
- if(['home','referrals'].includes(route)){const style=loadStyle('./assets/css/referral-priority.css','referral-priority');idle(()=>loadFeature('./assets/js/features/referral-priority.js','referral-priority',style),1200)}
- if(route==='profile')loadFeature('./assets/js/features/qualification.js','qualification');
- if(route==='tasks'||route==='visits')loadFeature('./assets/js/features/task-status.js','task-status');
- if(['register','tasks','visits','profile','admin'].includes(route))idle(()=>loadFeature('./assets/js/features/draft-recovery.js','draft-recovery'),1200);
+ if(['home','earn','chat'].includes(route))loadFeature('./features/guided-chat-experience.js','guided-chat-experience');
+ if(['landing','register','home','referrals'].includes(route)){const style=loadStyle('./assets/css/member-motivation.css','member-motivation');loadFeature('./features/member-motivation.js','member-motivation',style)}
+ if(['home','referrals'].includes(route)){const style=loadStyle('./assets/css/referral-priority.css','referral-priority');idle(()=>loadFeature('./features/referral-priority.js','referral-priority',style),1200)}
+ if(route==='profile')loadFeature('./features/qualification.js','qualification');
+ if(route==='tasks'||route==='visits')loadFeature('./features/task-status.js','task-status');
+ if(['register','tasks','visits','profile','admin'].includes(route))idle(()=>loadFeature('./features/draft-recovery.js','draft-recovery'),1200);
  if(route==='admin')return;
 }
 window.addEventListener('hashchange',loadRouteFeatures,{passive:true});
 loadRouteFeatures();
-idle(()=>loadFeature('./assets/js/features/analytics.js','analytics'),4500);
+idle(()=>loadFeature('./features/analytics.js','analytics'),4500);
