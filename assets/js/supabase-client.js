@@ -11,6 +11,7 @@ function loadFeature(src,key){if(document.querySelector(`script[data-feature="${
 const idle=callback=>window.requestIdleCallback?requestIdleCallback(callback,{timeout:1500}):setTimeout(callback,500);
 loadFeature('./assets/js/features/interaction-design.js','interaction-design');
 loadFeature('./assets/js/features/draft-recovery.js','draft-recovery');
+loadFeature('./assets/js/features/referral-priority.js','referral-priority');
 idle(()=>loadFeature('./assets/js/features/analytics.js','analytics'));
 function loadRouteFeatures(){const hash=location.hash;if(hash.includes('profile'))loadFeature('./assets/js/features/qualification.js','qualification');if(hash.includes('tasks')||hash.includes('visits'))loadFeature('./assets/js/features/task-status.js','task-status')}
 window.addEventListener('hashchange',loadRouteFeatures);loadRouteFeatures();
