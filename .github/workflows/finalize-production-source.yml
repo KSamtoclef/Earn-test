@@ -1,0 +1,232 @@
+name: Finalize production source
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/finalize-production-source.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Patch authoritative source
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          root=Path('.')
+
+          # 1. Exact Admin overview totals from the server RPC.
+          core=root/'assets/js/admin/core.js'
+          text=core.read_text()
+          old="""async function overview(){
+ const [summary,users]=await Promise.all([api.adminOverview(),loadUsers(true)]);
+ const totals={NG:{work:0,ref:0},KE:{work:0,ref:0}};
+ let suspicious=0;
+ users.forEach(u=>{const c=u.country==='KE'?'KE':'NG';totals[c].work+=Number(u.work_available_balance||0)+Number(u.work_pending_balance||0);totals[c].ref+=Number(u.referral_available_balance||0)+Number(u.referral_pending_balance||0);if(u.security_review_required||u.earning_suspended||u.fraud_review_status&&u.fraud_review_status!=='clear')suspicious++});
+ const stats=[
+  ['Total users',summary.total_users||users.length],['Online now',summary.online_now||0],['Pending task claims',summary.pending_tasks||0],['Pending withdrawals',summary.pending_withdrawals||0],['Pending KYC',summary.pending_kyc||0],['Suspicious accounts',suspicious],
+  ['Nigeria work liability',money(totals.NG.work,'NG')],['Nigeria referral liability',money(totals.NG.ref,'NG')],['Kenya work liability',money(totals.KE.work,'KE')],['Kenya referral liability',money(totals.KE.ref,'KE')]
+ ];
+ host().innerHTML=`<div class=\"admin-grid\">${stats.map(([a,b])=>`<button class=\"admin-stat\" type=\"button\"><small>${esc(a)}</small><b>${esc(b)}</b></button>`).join('')}</div><article class=\"card\" style=\"margin-top:14px\"><h2>Production status</h2><p>Frontend release: <b>20260731-production-certification-r1</b></p><p>Financial administration uses Supabase tables and secure administrator RPCs. Nigeria and Kenya liabilities are reported separately.</p></article>`;
+}"""
+          new="""async function overview(){
+ const summary=await api.adminOverview();
+ const stats=[
+  ['Total users',summary.total_users||0],['Online now',summary.online_now||0],['Pending task claims',summary.pending_tasks||0],['Pending withdrawals',summary.pending_withdrawals||0],['Pending KYC',summary.pending_kyc||0],['Suspicious accounts',summary.suspicious_accounts||0],
+  ['Nigeria work liability',money(summary.work_liability_ngn||0,'NG')],['Nigeria referral liability',money(summary.referral_liability_ngn||0,'NG')],['Kenya work liability',money(summary.work_liability_kes||0,'KE')],['Kenya referral liability',money(summary.referral_liability_kes||0,'KE')]
+ ];
+ host().innerHTML=`<div class=\"admin-grid\">${stats.map(([a,b])=>`<button class=\"admin-stat\" type=\"button\"><small>${esc(a)}</small><b>${esc(b)}</b></button>`).join('')}</div><article class=\"card\" style=\"margin-top:14px\"><h2>Production status</h2><p>Frontend release: <b>20260731-production-certification-r1</b></p><p>All liability and suspicious-account totals are calculated by Supabase across the complete database.</p></article>`;
+}"""
+          if old not in text: raise SystemExit('Admin overview source pattern not found')
+          text=text.replace(old,new)
+
+          # Pagination helpers and state.
+          anchor="let usersCache=[];\n"
+          addition="""let usersCache=[];
+const PAGE_SIZE=50;
+const pages={users:0,claims:0,chats:0,referrals:0,qualifications:0,withdrawals:0,kyc:0,payments:0,analytics:0,audit:0};
+function pager(name,count,render){const page=pages[name]||0,more=count===PAGE_SIZE;return`<div class=\"admin-pagination\"><button class=\"secondary\" type=\"button\" data-page-prev=\"${name}\" ${page===0?'disabled':''}>← Previous</button><span>Page ${page+1}</span><button class=\"secondary\" type=\"button\" data-page-next=\"${name}\" ${more?'':'disabled'}>Next →</button></div>`}
+function bindPager(name,render){host().addEventListener('click',async event=>{const prev=event.target.closest(`[data-page-prev=\"${name}\"]`),next=event.target.closest(`[data-page-next=\"${name}\"]`);if(!prev&&!next)return;if(prev)pages[name]=Math.max(0,pages[name]-1);if(next)pages[name]++;await render()},{once:true})}
+"""
+          if anchor not in text: raise SystemExit('Admin state anchor not found')
+          text=text.replace(anchor,addition,1)
+          text=text.replace("async function loadUsers(force=false){if(force||!usersCache.length)usersCache=await api.adminUsers();return usersCache}","async function loadUsers(force=false,offset=0){if(force||!usersCache.length||offset)usersCache=await api.adminUsers(PAGE_SIZE,offset);return usersCache}")
+
+          # Page the busiest Admin lists.
+          text=text.replace("const rows=await loadUsers(true);","const rows=await loadUsers(true,pages.users*PAGE_SIZE);",1)
+          text=text.replace("</section>`;\n const scope=$('#bulk-users');","${pager('users',rows.length,users)}</section>`;\n bindPager('users',users);\n const scope=$('#bulk-users');",1)
+          text=text.replace("const [rows,tasks]=await Promise.all([api.adminClaims(),api.adminTasks()]);","const [rows,tasks]=await Promise.all([api.adminClaims(PAGE_SIZE,pages.claims*PAGE_SIZE),api.adminTasks()]);")
+          text=text.replace("</div></section>`;\n const scope=$('#bulk-claims');","</div>${pager('claims',rows.length,claims)}</section>`;\n bindPager('claims',claims);\n const scope=$('#bulk-claims');",1)
+          text=text.replace("async function chats(){const rows=await api.adminChats();","async function chats(){const rows=await api.adminChats(PAGE_SIZE,pages.chats*PAGE_SIZE);")
+          text=text.replace("</div>`;host().onclick=async e=>{const b=e.target.closest('.reverse-chat');","</div>${pager('chats',rows.length,chats)}`;bindPager('chats',chats);host().onclick=async e=>{const b=e.target.closest('.reverse-chat');",1)
+          text=text.replace("async function referrals(){const rows=await api.adminReferrals();","async function referrals(){const rows=await api.adminReferrals(PAGE_SIZE,pages.referrals*PAGE_SIZE);")
+          text=text.replace("</div>`;host().onclick=async e=>{const b=e.target.closest('.referral-action');","</div>${pager('referrals',rows.length,referrals)}`;bindPager('referrals',referrals);host().onclick=async e=>{const b=e.target.closest('.referral-action');",1)
+          text=text.replace("api.adminQualificationSubmissions()","api.adminQualificationSubmissions(PAGE_SIZE,pages.qualifications*PAGE_SIZE)")
+          text=text.replace("</div>`;$('#mission-form').onsubmit","</div>${pager('qualifications',subs.length,qualifications)}`;bindPager('qualifications',qualifications);$('#mission-form').onsubmit",1)
+          text=text.replace("async function withdrawals(){const rows=await api.adminWithdrawals();","async function withdrawals(){const rows=await api.adminWithdrawals(PAGE_SIZE,pages.withdrawals*PAGE_SIZE);")
+          text=text.replace("</div>`;host().onclick=async e=>{const b=e.target.closest('.wd-action');","</div>${pager('withdrawals',rows.length,withdrawals)}`;bindPager('withdrawals',withdrawals);host().onclick=async e=>{const b=e.target.closest('.wd-action');",1)
+          text=text.replace("api.adminKyc(),loadUsers(true)","api.adminKyc(PAGE_SIZE,pages.kyc*PAGE_SIZE),loadUsers(true)")
+          text=text.replace("</div></section>`;\n const test=id=>","</div>${pager('kyc',rows.length,kyc)}</section>`;\n bindPager('kyc',kyc);\n const test=id=>",1)
+          text=text.replace("api.adminPayments(),api.adminFeedback()","api.adminPayments(PAGE_SIZE,pages.payments*PAGE_SIZE),api.adminFeedback(PAGE_SIZE,pages.payments*PAGE_SIZE)")
+          text=text.replace("</div>`;host().onclick=async e=>{const pbtn=e.target.closest('.payment-visible');","</div>${pager('payments',Math.max(p.length,f.length),payments)}`;bindPager('payments',payments);host().onclick=async e=>{const pbtn=e.target.closest('.payment-visible');",1)
+          text=text.replace("async function analytics(){const rows=await api.adminAnalytics(),counts={};","async function analytics(){const rows=await api.adminAnalytics(PAGE_SIZE,pages.analytics*PAGE_SIZE),counts={};")
+          text=text.replace("</div>${table(['Event'","</div>${pager('analytics',rows.length,analytics)}${table(['Event'",1)
+          text=text.replace("async function audit(){const rows=await api.adminAudit();host().innerHTML=table", "async function audit(){const rows=await api.adminAudit(PAGE_SIZE,pages.audit*PAGE_SIZE);host().innerHTML=pager('audit',rows.length,audit)+table")
+          text=text.replace("))}","))};bindPager('audit',audit)}",1) if False else text
+          core.write_text(text)
+
+          # 2. Server overview RPC includes exact counts and liabilities.
+          level=root/'supabase/earnchat_level_chat_upgrade_20260731.sql'
+          sql=level.read_text()
+          overview_sql="""
+
+create or replace function public.admin_get_earnchat_overview()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=public,pg_temp
+as $$
+begin
+ if not public.earnchat_is_admin() then raise exception 'Administrator permission required'; end if;
+ return jsonb_build_object(
+  'total_users',(select count(*) from public.profiles),
+  'online_now',(select count(distinct coalesce(user_id::text,visitor_id,session_id)) from public.earnchat_site_presence where is_visible and last_seen>now()-interval '90 seconds'),
+  'pending_tasks',(select count(*) from public.earnchat_task_claims where status='pending'),
+  'pending_withdrawals',(select count(*) from public.earnchat_withdrawals where status in('submitted','under_review','approved','processing')),
+  'pending_kyc',(select count(*) from public.earnchat_kyc_submissions where status in('submitted','under_review')),
+  'suspicious_accounts',(select count(*) from public.profiles where security_review_required or earning_suspended or coalesce(fraud_review_status,'clear')<>'clear'),
+  'work_liability_ngn',(select coalesce(sum(work_available_balance+work_pending_balance),0) from public.profiles where country='NG'),
+  'referral_liability_ngn',(select coalesce(sum(referral_available_balance+referral_pending_balance),0) from public.profiles where country='NG'),
+  'work_liability_kes',(select coalesce(sum(work_available_balance+work_pending_balance),0) from public.profiles where country='KE'),
+  'referral_liability_kes',(select coalesce(sum(referral_available_balance+referral_pending_balance),0) from public.profiles where country='KE')
+ );
+end$$;
+grant execute on function public.admin_get_earnchat_overview() to authenticated;
+"""
+          if "'suspicious_accounts'" not in sql:
+              marker='commit;'
+              pos=sql.rfind(marker)
+              if pos<0: raise SystemExit('Level upgrade commit marker not found')
+              sql=sql[:pos]+overview_sql+'\n'+sql[pos:]
+          level.write_text(sql)
+
+          # 3. Final verification checks.
+          verify=root/'supabase/earnchat_production_verify.sql'
+          v=verify.read_text()
+          checks="""
+
+select 'duplicate_signup_bonuses' check_name,count(*) problem_count from(
+ select user_id from public.earnchat_ledger where source_type='signup_bonus' and entry_type='credit' and status='approved' group by user_id having count(*)>1
+)x;
+select 'missing_signup_bonuses' check_name,count(*) problem_count from public.profiles p where not exists(
+ select 1 from public.earnchat_ledger l where l.user_id=p.id and l.source_type='signup_bonus' and l.entry_type='credit' and l.status='approved'
+);
+select 'duplicate_point_events' check_name,count(*) problem_count from(
+ select user_id,source_type,source_key from public.earnchat_point_events group by user_id,source_type,source_key having count(*)>1
+)x;
+select 'activity_point_mismatches' check_name,count(*) problem_count from public.profiles p where p.activity_points<>coalesce((select sum(e.points) from public.earnchat_point_events e where e.user_id=p.id),0);
+select 'duplicate_referral_commissions' check_name,count(*) problem_count from(
+ select user_id,source_id from public.earnchat_ledger where source_type='referral_commission' and entry_type='credit' group by user_id,source_id having count(*)>1
+)x;
+select 'invalid_level_points_or_commission' check_name,count(*) problem_count from public.earnchat_level_settings where points_required<0 or referral_commission_percent not between 1 and 7;
+select 'invalid_level_point_contract' check_name,count(*) problem_count from public.earnchat_level_settings where (level_name='Starter' and points_required<>0) or(level_name='Active' and points_required<>50) or(level_name='Pro' and points_required<>150) or(level_name='Elite' and points_required<>300);
+select 'invalid_member_motivation_settings' check_name,count(*) problem_count from public.earnchat_business_settings where id=true and(signup_bonus_ngn<>2000 or referral_reward_ngn<>500);
+select 'chat_minimum_contract' check_name,case when pg_get_functiondef('public.complete_earnchat_chat(uuid,jsonb,jsonb)'::regprocedure) like '%<45%' then 0 else 1 end problem_count;
+"""
+          final="select 'Earn Chat verification finished. All object rows should show exists=true; all problem_count rows should be 0.' as result;"
+          if 'duplicate_signup_bonuses' not in v:
+              if final not in v: raise SystemExit('Verifier final marker not found')
+              v=v.replace(final,checks+'\n'+final)
+          verify.write_text(v)
+
+          # 4. Build one canonical fresh installer by embedding both current upgrades.
+          install=root/'supabase/earnchat_production_install.sql'
+          kyc=root/'supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql'
+          base=install.read_text()
+          def body(path):
+              s=path.read_text()
+              s=re.sub(r'^.*?\bbegin;\s*','',s,count=1,flags=re.S|re.I)
+              idx=s.lower().rfind('commit;')
+              if idx>=0:s=s[:idx]
+              s=re.sub(r"\nselect\s+'[^']+'\s+as\s+result;?\s*$",'',s,flags=re.S|re.I)
+              return s.strip()
+          marker='-- CURRENT CONSOLIDATED UPGRADES EMBEDDED FOR FRESH INSTALLS'
+          if marker not in base:
+              pos=base.lower().rfind('commit;')
+              if pos<0: raise SystemExit('Installer commit marker not found')
+              embedded='\n\n'+marker+'\n'+body(kyc)+'\n\n'+body(level)+'\n\n'
+              base=base[:pos]+embedded+base[pos:]
+              base=re.sub(r"version='[^']+'","version='20260731-production-complete-r1'",base)
+          install.write_text(base)
+
+          # Run order now distinguishes existing DB and one-file fresh install.
+          run=root/'supabase/PRODUCTION_RUN_ORDER.md'
+          run.write_text("""# Earn Chat production SQL run order
+
+Back up the Supabase database before running production SQL.
+
+## Existing database already installed
+
+Run these current idempotent upgrades, then verification:
+
+1. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
+2. `earnchat_level_chat_upgrade_20260731.sql`
+3. `earnchat_production_verify.sql`
+
+Every object row must show `exists = true`; every `problem_count` must be `0`.
+
+## Fresh or reset database
+
+The canonical installer now contains the current KYC, recovery, welcome-bonus, points, referral-commission, level and 45-second chat contracts.
+
+1. `earnchat_production_install.sql`
+2. `earnchat_production_verify.sql`
+
+Do not run historical production patch files after the canonical fresh installer.
+
+After installation, confirm at least one trusted account has `is_admin=true`.
+""")
+
+          # Validator requires final contracts and forbids continuous runtime scans.
+          validator=root/'scripts/validate-production.mjs'
+          val=validator.read_text()
+          val=val.replace("'invalid_withdrawal_payouts'];","'invalid_withdrawal_payouts','duplicate_signup_bonuses','missing_signup_bonuses','duplicate_point_events','activity_point_mismatches','duplicate_referral_commissions','invalid_level_points_or_commission','chat_minimum_contract'];")
+          insert="""
+for(const file of ['assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/guided-chat-experience.js']){
+ const source=fs.readFileSync(path.join(root,file),'utf8');
+ if(source.includes('new MutationObserver'))fail.push(`Continuous whole-page observer remains in ${file}`);
+ if(/setInterval\([^,]+,\s*(?:350|500)\)/.test(source))fail.push(`High-frequency whole-page timer remains in ${file}`);
+}
+for(const token of ['suspicious_accounts','work_liability_ngn','referral_liability_ngn','work_liability_kes','referral_liability_kes'])if(!motivationSql.includes(token))fail.push(`Admin overview server contract missing: ${token}`);
+if(!install.includes('CURRENT CONSOLIDATED UPGRADES EMBEDDED FOR FRESH INSTALLS'))fail.push('Canonical installer does not embed current upgrades.');
+"""
+          point="if(fs.existsSync(path.join(root,'supabase','earnchat_production_certification_upgrade_20260731.sql')))"
+          if insert.strip() not in val:
+              val=val.replace(point,insert+'\n'+point)
+          validator.write_text(val)
+          PY
+
+          npm test
+
+      - name: Commit final source and remove workflow
+        shell: bash
+        run: |
+          git config user.name "Earn Chat Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/finalize-production-source.yml
+          git add assets/js/admin/core.js supabase/earnchat_level_chat_upgrade_20260731.sql supabase/earnchat_production_verify.sql supabase/earnchat_production_install.sql supabase/PRODUCTION_RUN_ORDER.md scripts/validate-production.mjs
+          git commit -m "Finalize production Admin accuracy verification pagination and installer [skip ci]"
+          git push origin main
