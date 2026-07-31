@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "validate": "node scripts/validate-production.mjs",
+    "build": "npm run validate",
     "test": "npm run validate"
   }
 }
