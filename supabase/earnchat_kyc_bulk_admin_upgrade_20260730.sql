@@ -78,9 +78,12 @@ as $$
    'started_at',c.started_at,
    'required_seconds',t.required_seconds,
    'reward',c.reward_amount,
+   'base_reward_ngn',t.base_reward_ngn,
    'currency',c.currency,
    'country_code',c.country_code,
+   'category',t.category,
    'proof_type',t.proof_type,
+   'proof_required',t.proof_required,
    'approval_type',t.approval_type,
    'url',t.external_url,
    'title',t.title,
@@ -100,7 +103,6 @@ grant execute on function public.get_my_open_task_claim() to authenticated;
 create or replace function public.get_my_open_chat_attempt()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path=public
 as $$
@@ -125,6 +127,24 @@ begin
 end$$;
 
 grant execute on function public.get_my_open_chat_attempt() to authenticated;
+
+create or replace function public.cancel_earnchat_chat_attempt(p_attempt uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare uid uuid:=auth.uid();changed int;
+begin
+ update public.earnchat_chat_attempts
+ set status='cancelled',completed_at=now()
+ where id=p_attempt and user_id=uid and status='started';
+ get diagnostics changed=row_count;
+ if changed=0 then raise exception 'Chat attempt is not available to cancel'; end if;
+ return jsonb_build_object('ok',true,'attempt_id',p_attempt,'status','cancelled');
+end$$;
+
+grant execute on function public.cancel_earnchat_chat_attempt(uuid) to authenticated;
 
 create or replace function public.start_earnchat_task(p_task uuid)
 returns jsonb
@@ -151,7 +171,7 @@ begin
  reward:=public.earnchat_country_amount(t.base_reward_ngn,p.country);
  insert into public.earnchat_task_claims(task_id,user_id,reward_amount,currency,country_code)
  values(t.id,uid,reward,p.currency,p.country) returning id,started_at into cid,started;
- return jsonb_build_object('claim_id',cid,'task_id',t.id,'started_at',started,'url',t.external_url,'title',t.title,'provider_name',t.provider_name,'required_seconds',t.required_seconds,'reward',reward,'currency',p.currency,'approval_type',t.approval_type,'proof_type',t.proof_type,'instructions',t.instructions);
+ return jsonb_build_object('claim_id',cid,'task_id',t.id,'started_at',started,'url',t.external_url,'title',t.title,'provider_name',t.provider_name,'category',t.category,'required_seconds',t.required_seconds,'reward',reward,'base_reward_ngn',t.base_reward_ngn,'currency',p.currency,'approval_type',t.approval_type,'proof_type',t.proof_type,'proof_required',t.proof_required,'instructions',t.instructions);
 end$$;
 
 grant execute on function public.start_earnchat_task(uuid) to authenticated;
