@@ -7,33 +7,46 @@ const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flat
 const relative=file=>path.relative(root,file).replaceAll('\\','/');
 const requiredFiles=[
  'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/js/app-config.js','assets/js/supabase-client.js',
- 'assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/enhancements.js','assets/js/kyc-bulk-upgrade.js',
+ 'assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/features/kyc.js',
  'assets/js/features/qualification.js','assets/js/features/feedback.js','assets/js/features/analytics.js','assets/js/features/task-status.js',
  'supabase/earnchat_production_install.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 for(const file of requiredFiles)if(!fs.existsSync(path.join(root,file)))fail.push(`Missing required file: ${file}`);
 
 const runtimeFiles=walk(path.join(root,'assets','js')).filter(x=>/\.(?:js|mjs)$/.test(x));
-for(const absolute of runtimeFiles){const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');try{execFileSync(process.execPath,['--check',absolute],{stdio:'pipe'})}catch(error){fail.push(`JavaScript syntax failed: ${file}\n${error.stderr?.toString()||error.message}`)}
+for(const absolute of runtimeFiles){
+ const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');
+ try{execFileSync(process.execPath,['--check',absolute],{stdio:'pipe'})}catch(error){fail.push(`JavaScript syntax failed: ${file}\n${error.stderr?.toString()||error.message}`)}
  const imports=[...text.matchAll(/(?:from\s*|import\s*\()['"](\.\.?\/[^'"]+)['"]/g)];
  for(const match of imports){const resolved=path.resolve(path.dirname(absolute),match[1].split('?')[0]);if(!fs.existsSync(resolved))fail.push(`Missing import from ${file}: ${match[1]}`)}
 }
 
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const selectors=[...runtimeFiles].flatMap(absolute=>{const text=fs.readFileSync(absolute,'utf8');return[...text.matchAll(/(?:querySelector|querySelectorAll|\$|q)\(\s*['"]#([A-Za-z0-9_-]+)['"]/g)].map(m=>[relative(absolute),m[1]])});
-for(const[file,id]of selectors)if(!html.includes(`id="${id}"`)&&!['kyc-provider-modal','kyc-provider-close','kyc-provider-content','kyc-provider-message'].includes(id))fail.push(`${file} references missing HTML id: ${id}`);
+const selectors=runtimeFiles.flatMap(absolute=>{const text=fs.readFileSync(absolute,'utf8');return[...text.matchAll(/(?:querySelector|querySelectorAll|\$|q)\(\s*['"]#([A-Za-z0-9_-]+)['"]/g)].map(m=>[relative(absolute),m[1]])});
+const dynamicIds=new Set(['kyc-provider-modal','kyc-provider-close','kyc-provider-content','kyc-provider-message','customer-kyc-style']);
+for(const[file,id]of selectors)if(!html.includes(`id="${id}"`)&&!dynamicIds.has(id))fail.push(`${file} references missing HTML id: ${id}`);
 const ids=[...html.matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m=>m[1]);
 for(const id of new Set(ids))if(ids.filter(x=>x===id).length>1)fail.push(`Duplicate HTML id: ${id}`);
 
-const forbidden=['daily-share','pg-share','pg-claim','earn_per_share','share_reward','₦3,750','₦70,000','demoSignupFallback','earnchat-demo-users','request_withdrawal','withdrawal_requests','sponsored-visits-upgrade','linked-task-marketplace','auth-session-fix','Reply & Earn up to','window.EARNCHAT_BUSINESS','window.S||'];
-for(const absolute of [path.join(root,'index.html'),...runtimeFiles]){const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');for(const term of forbidden)if(text.includes(term))fail.push(`Forbidden legacy term in ${file}: ${term}`)}
+const forbidden=['daily-share','pg-share','pg-claim','earn_per_share','share_reward','₦3,750','₦70,000','demoSignupFallback','earnchat-demo-users','request_withdrawal','withdrawal_requests','sponsored-visits-upgrade','linked-task-marketplace','auth-session-fix','Reply & Earn up to','window.EARNCHAT_BUSINESS','window.S||','proof_type:\'screenshot\'','value="screenshot"'];
+for(const absolute of [path.join(root,'index.html'),...runtimeFiles]){const file=relative(absolute),text=fs.readFileSync(absolute,'utf8');for(const term of forbidden)if(text.includes(term))fail.push(`Forbidden legacy or unsupported term in ${file}: ${term}`)}
 
-const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js'];
+const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketplace.js','auth-session-fix.js','earnchat-business-config.js','app-consistency-controller.js','earnchat-app-flow.js','earnchat-legacy-flow-bridge.js','earnchat-wallet-upgrade.js','enhancements.js','kyc-bulk-upgrade.js'];
 for(const name of forbiddenRuntimeNames)if(runtimeFiles.some(f=>path.basename(f)===name))fail.push(`Obsolete runtime file still exists: ${name}`);
 
 const loader=fs.readFileSync(path.join(root,'assets/js/supabase-client.js'),'utf8');
-for(const token of ['./assets/js/kyc-bulk-upgrade.js','./assets/js/admin/enhancements.js','./assets/js/features/task-status.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
-if(!loader.includes("const RELEASE='20260731-production-certification-r1'"))fail.push('Certification release identifier missing from feature loader.');
+for(const token of ['./assets/js/features/kyc.js','./assets/js/features/task-status.js','./assets/js/features/qualification.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
+if(!loader.includes("RELEASE_VERSION='20260731-production-certification-r1'"))fail.push('Certification release identifier missing from feature loader.');
+if(loader.includes('admin/enhancements.js')||loader.includes('kyc-bulk-upgrade.js'))fail.push('Obsolete override module is still loaded.');
+
+const entry=fs.readFileSync(path.join(root,'assets/js/admin/admin.js'),'utf8');
+if(!entry.includes("export{renderAdmin}from'./core.js'"))fail.push('Admin entry is not routed through the authoritative core.');
+const admin=fs.readFileSync(path.join(root,'assets/js/admin/core.js'),'utf8');
+for(const token of ['KYC SETTINGS','Live preview','admin_bulk_review_task_claims','admin_bulk_review_earnchat_kyc','Nigeria work liability','Kenya work liability'])if(!admin.includes(token))fail.push(`Admin core missing: ${token}`);
+if(admin.includes('value="screenshot"'))fail.push('Admin core still exposes unsupported screenshot proof.');
+
+const version='20260731-production-certification-r1';
+for(const match of html.matchAll(/[?&]v=([^"']+)/g))if(match[1]!==version)fail.push(`index.html uses mixed asset version: ${match[1]}`);
 
 const install=fs.readFileSync(path.join(root,'supabase','earnchat_production_install.sql'),'utf8');
 const verify=fs.readFileSync(path.join(root,'supabase','earnchat_production_verify.sql'),'utf8');
@@ -47,4 +60,4 @@ if(fs.existsSync(kycSql)){const text=fs.readFileSync(kycSql,'utf8');for(const to
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat production validation passed.');
-console.log(`Checked ${requiredFiles.length} required files, ${runtimeFiles.length} runtime modules, selectors, duplicate IDs, lazy feature loading, forbidden legacy code and SQL contracts.`);
+console.log(`Checked ${requiredFiles.length} required files, ${runtimeFiles.length} runtime modules, selectors, duplicate IDs, authoritative Admin routing, isolated KYC loading, asset versions, forbidden legacy code and SQL contracts.`);
