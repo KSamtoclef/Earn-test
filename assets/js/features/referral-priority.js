@@ -61,11 +61,11 @@ function enhanceReferralPage(){
 }
 
 function enhance(){enhanceHome();enhanceReferralPage()}
-function schedule(){clearTimeout(scanTimer);scanTimer=setTimeout(enhance,80)}
+function schedule(delay=80){clearTimeout(scanTimer);scanTimer=setTimeout(enhance,delay)}
 
 addTheme();
-window.addEventListener('hashchange',schedule);
-window.addEventListener('pageshow',schedule);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
-new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
-schedule();
+window.addEventListener('hashchange',()=>{schedule(60);setTimeout(enhance,240)});
+window.addEventListener('pageshow',()=>schedule(60));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(60)});
+schedule(0);
+setTimeout(enhance,240);
