@@ -20,7 +20,6 @@ export const api={
  startChat:async partner=>rpc('start_earnchat_chat',{p_partner:partner||null}),
  completeChat:async(attempt,replies,quality={})=>rpc('complete_earnchat_chat',{p_attempt:attempt,p_replies:replies,p_quality:quality}),
  openChatAttempt:async()=>rpc('get_my_open_chat_attempt'),
- cancelChatAttempt:async attempt=>rpc('cancel_earnchat_chat_attempt',{p_attempt:attempt}),
  referrals:async userId=>unwrap(await select('earnchat_referrals').eq('referrer_id',userId).order('signup_at',{ascending:false})),
  registerReferral:async code=>rpc('register_earnchat_referral',{p_code:code}),
  qualificationMissions:async()=>unwrap(await select('earnchat_qualification_missions').eq('status','active').order('created_at',{ascending:false})),
