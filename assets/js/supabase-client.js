@@ -10,5 +10,5 @@ export const sb=sdk.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSe
 function loadFeature(src,key){if(document.querySelector(`script[data-feature="${key}"]`))return;const s=document.createElement('script');s.type='module';s.src=`${src}?v=${RELEASE_VERSION}`;s.dataset.feature=key;s.onerror=()=>console.error(`Earn Chat feature failed to load: ${key}`);document.head.appendChild(s)}
 const idle=callback=>window.requestIdleCallback?requestIdleCallback(callback,{timeout:1500}):setTimeout(callback,500);
 idle(()=>{loadFeature('./assets/js/features/analytics.js','analytics');loadFeature('./assets/js/features/feedback.js','feedback')});
-function loadRouteFeatures(){const hash=location.hash;if(hash.includes('profile')){loadFeature('./assets/js/features/qualification.js','qualification');loadFeature('./assets/js/features/kyc.js','customer-kyc')}if(hash.includes('tasks')||hash.includes('visits'))loadFeature('./assets/js/features/task-status.js','task-status')}
+function loadRouteFeatures(){const hash=location.hash;if(hash.includes('profile'))loadFeature('./assets/js/features/qualification.js','qualification');if(hash.includes('tasks')||hash.includes('visits'))loadFeature('./assets/js/features/task-status.js','task-status')}
 window.addEventListener('hashchange',loadRouteFeatures);loadRouteFeatures();
