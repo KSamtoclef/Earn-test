@@ -74,6 +74,42 @@ function enhanceLanding(){
  if(proof&&!proof.classList.contains('hidden'))addSectionCta(proof,'Join Earn Chat','register');
 }
 
+function openUpgrade(){
+ sessionStorage.setItem('earnchat-profile-mode','upgrade');
+ sessionStorage.setItem('earnchat-scroll-level','1');
+ activate('profile');
+}
+
+function enhanceBottomNav(){
+ const nav=$('.bottom-nav');
+ if(!nav)return;
+ const buttons=$$('button',nav);
+ if(buttons.length<5)return;
+ const upgrade=buttons[2],referrals=buttons[3],profileButton=buttons[4];
+ if(upgrade.dataset.primaryUpgrade!=='1'){
+  upgrade.dataset.primaryUpgrade='1';
+  upgrade.dataset.route='upgrade';
+  delete upgrade.dataset.go;
+  upgrade.innerHTML='<span>↗</span>Upgrade';
+  upgrade.setAttribute('aria-label','Open earned level progress');
+  upgrade.onclick=openUpgrade;
+ }
+ if(referrals.dataset.primaryReferrals!=='1'){
+  referrals.dataset.primaryReferrals='1';
+  referrals.dataset.route='referrals';
+  referrals.dataset.go='referrals';
+  referrals.innerHTML='<span>♧</span>Referrals';
+  referrals.setAttribute('aria-label','Open referrals and sharing');
+ }
+ if(profileButton.dataset.profileMode!=='1'){
+  profileButton.dataset.profileMode='1';
+  profileButton.addEventListener('click',()=>sessionStorage.setItem('earnchat-profile-mode','profile'));
+ }
+ const upgradeMode=location.hash.includes('profile')&&sessionStorage.getItem('earnchat-profile-mode')==='upgrade';
+ upgrade.classList.toggle('active',upgradeMode);
+ if(upgradeMode)profileButton.classList.remove('active');
+}
+
 function simplifyHomeExplore(){
  const grid=$('.quick-grid','#view-home');
  if(!grid||grid.dataset.simplified==='1')return;
@@ -94,7 +130,7 @@ function enhanceLevelPills(){
   pill.setAttribute('role','button');
   pill.setAttribute('tabindex','0');
   pill.setAttribute('aria-label','Open level progress');
-  const open=()=>{sessionStorage.setItem('earnchat-scroll-level','1');activate('profile')};
+  const open=openUpgrade;
   pill.addEventListener('click',open);
   pill.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open()}});
  });
@@ -135,6 +171,7 @@ function enhanceHome(){
 function enhanceCustomerPages(){
  makeInteractive($('.balance-card','#view-referrals'),'referrals','View referral progress');
  $$('.list-card.partner-card').forEach(card=>card.classList.add('designed-surface'));
+ enhanceBottomNav();
  enhanceLevelPills();
  enhanceKycAction();
 }
