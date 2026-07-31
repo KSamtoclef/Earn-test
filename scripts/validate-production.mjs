@@ -24,7 +24,7 @@ for(const absolute of runtimeFiles){
 
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const selectors=runtimeFiles.flatMap(absolute=>{const text=fs.readFileSync(absolute,'utf8');return[...text.matchAll(/(?:querySelector|querySelectorAll|\$|q)\(\s*['"]#([A-Za-z0-9_-]+)['"]/g)].map(m=>[relative(absolute),m[1]])});
-const dynamicIds=new Set(['kyc-provider-modal','kyc-provider-close','kyc-provider-content','kyc-provider-message','task-proof-field','task-proof-value','example-label','admin-mobile-section','admin-pagination','task-preview']);
+const dynamicIds=new Set(['kyc-provider-modal','kyc-provider-close','kyc-provider-content','kyc-provider-message','task-proof-field','task-proof-value','example-label','admin-mobile-section','admin-pagination','task-preview','qualification-proof-modal','qualification-proof-close','qualification-proof-message','qualification-proof-value','qualification-proof-submit']);
 for(const[file,id]of selectors)if(!html.includes(`id="${id}"`)&&!dynamicIds.has(id))fail.push(`${file} references missing HTML id: ${id}`);
 const ids=[...html.matchAll(/\sid="([A-Za-z0-9_-]+)"/g)].map(m=>m[1]);
 for(const id of new Set(ids))if(ids.filter(x=>x===id).length>1)fail.push(`Duplicate HTML id: ${id}`);
@@ -45,6 +45,10 @@ const app=fs.readFileSync(path.join(root,'assets/js/app.js'),'utf8');
 for(const token of ['openKycFlow','restoreOpenTask','restoreOpenChatBanner','openTaskClaim','openChatAttempt','cancelChatAttempt','EXAMPLE DASHBOARD','social-proof-section','member-feedback-list'])if(!app.includes(token))fail.push(`Customer core missing: ${token}`);
 if(app.includes('async function submitKyc(){const reference=prompt'))fail.push('Prompt-based KYC remains in customer core.');
 if(!app.includes(`const RELEASE='${RELEASE}'`))fail.push('Customer controller release identifier is inconsistent.');
+
+const qualification=fs.readFileSync(path.join(root,'assets/js/features/qualification.js'),'utf8');
+for(const token of ['qualification-proof-modal','earnchat-qualification-pending','about:blank','Submit for review'])if(!qualification.includes(token))fail.push(`Qualification workflow missing: ${token}`);
+if(qualification.includes("prompt('Enter your qualification proof"))fail.push('Qualification workflow still uses an automatic browser prompt.');
 
 const entry=fs.readFileSync(path.join(root,'assets/js/admin/admin.js'),'utf8');
 if(!entry.includes("export{renderAdmin}from'./core.js'"))fail.push('Admin entry is not routed through the authoritative core.');
