@@ -11,6 +11,7 @@ function loadFeature(src,key){if(document.querySelector(`script[data-feature="${
 const idle=callback=>window.requestIdleCallback?requestIdleCallback(callback,{timeout:1500}):setTimeout(callback,500);
 loadFeature('./assets/js/features/interaction-design.js','interaction-design');
 loadFeature('./assets/js/features/draft-recovery.js','draft-recovery');
+loadFeature('./assets/js/features/member-motivation.js','member-motivation');
 loadFeature('./assets/js/features/referral-priority.js','referral-priority');
 loadFeature('./assets/js/features/level-journey.js','level-journey');
 loadFeature('./assets/js/features/guided-chat-experience.js','guided-chat-experience');
