@@ -1,4 +1,4 @@
--- Earn Chat welcome bonus, activity points, earned levels, direct-referral commissions and compact guided-chat upgrade
+-- Earn Chat final member-motivation, referral commission, guided-chat and Admin overview upgrade
 -- Safe to rerun after the production installer and consolidated KYC/recovery upgrade.
 begin;
 
@@ -24,7 +24,7 @@ create policy earnchat_point_events_own_read on public.earnchat_point_events for
 update public.earnchat_business_settings
 set signup_bonus_ngn=2000,
     referral_reward_ngn=500,
-    version='20260731-member-motivation-r2',
+    version='20260731-production-complete-r1',
     updated_at=now()
 where id=true;
 
@@ -34,11 +34,7 @@ update public.earnchat_level_settings set points_required=150,referral_commissio
 update public.earnchat_level_settings set points_required=300,referral_commission_percent=7,updated_at=now() where level_name='Elite';
 
 create or replace function public.earnchat_award_points(p_user uuid,p_source_type text,p_source_key text,p_points integer,p_description text default null)
-returns integer
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns integer language plpgsql security definer set search_path=public,pg_temp as $$
 declare inserted uuid;
 begin
  if p_user is null or nullif(trim(p_source_type),'') is null or nullif(trim(p_source_key),'') is null or coalesce(p_points,0)<=0 then return 0; end if;
@@ -51,11 +47,7 @@ begin
 end$$;
 
 create or replace function public.earnchat_grant_signup_bonus(p_user uuid)
-returns bigint
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns bigint language plpgsql security definer set search_path=public,pg_temp as $$
 declare p public.profiles%rowtype;base bigint;amount bigint;inserted uuid;
 begin
  select * into p from public.profiles where id=p_user for update;
@@ -71,11 +63,7 @@ begin
 end$$;
 
 create or replace function public.ensure_earnchat_profile(p_full_name text default null,p_country text default null)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare uid uuid:=auth.uid();u auth.users%rowtype;cc text;r public.profiles%rowtype;bonus bigint;
 begin
  if uid is null then raise exception 'Authentication required'; end if;
@@ -89,15 +77,8 @@ begin
  return to_jsonb(r)||jsonb_build_object('welcome_bonus_credited',bonus);
 end$$;
 
-grant execute on function public.ensure_earnchat_profile(text,text) to authenticated;
-
 create or replace function public.get_my_earnchat_state()
-returns jsonb
-language sql
-stable
-security definer
-set search_path=public,pg_temp
-as $$
+returns jsonb language sql stable security definer set search_path=public,pg_temp as $$
  select jsonb_build_object(
   'profile',to_jsonb(p),
   'wallet',jsonb_build_object('work_available',p.work_available_balance,'work_pending',p.work_pending_balance,'referral_available',p.referral_available_balance,'referral_pending',p.referral_pending_balance,'total_withdrawn',p.total_withdrawn),
@@ -109,14 +90,8 @@ as $$
  ) from public.profiles p where p.id=auth.uid()
 $$;
 
-grant execute on function public.get_my_earnchat_state() to authenticated;
-
 create or replace function public.evaluate_earnchat_level(p_user uuid default auth.uid())
-returns text
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns text language plpgsql security definer set search_path=public,pg_temp as $$
 declare p public.profiles%rowtype;l public.earnchat_level_settings%rowtype;chosen text:='Starter';days int;attempts int;rejects int;rate numeric;
 begin
  select * into p from public.profiles where id=p_user for update;
@@ -128,8 +103,8 @@ begin
  for l in select * from public.earnchat_level_settings order by rank loop
   if p.activity_points>=coalesce(l.points_required,0)
    and days>=l.account_days and p.active_days_count>=l.active_days and p.approved_chats_count>=l.approved_chats and p.approved_tasks_count>=l.approved_tasks and rate<=l.max_rejection_rate
-   and (l.kyc_requirement='none' or (l.kyc_requirement='submitted' and p.kyc_status in('submitted','under_review','approved')) or (l.kyc_requirement='approved' and p.kyc_status='approved'))
-   and (l.qualification_mission is null or (l.qualification_mission='pro' and p.pro_mission_status='approved') or (l.qualification_mission='elite' and p.elite_mission_status='approved'))
+   and (l.kyc_requirement='none' or(l.kyc_requirement='submitted' and p.kyc_status in('submitted','under_review','approved'))or(l.kyc_requirement='approved' and p.kyc_status='approved'))
+   and (l.qualification_mission is null or(l.qualification_mission='pro' and p.pro_mission_status='approved')or(l.qualification_mission='elite' and p.elite_mission_status='approved'))
    and not p.security_review_required and p.fraud_review_status='clear' and not p.earning_suspended then chosen:=l.level_name;
   end if;
  end loop;
@@ -138,11 +113,7 @@ begin
 end$$;
 
 create or replace function public.mark_earnchat_active_day(p_user uuid default auth.uid())
-returns void
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns void language plpgsql security definer set search_path=public,pg_temp as $$
 declare first_action boolean;
 begin
  select not exists(select 1 from public.earnchat_active_days where user_id=p_user and activity_date=current_date) into first_action;
@@ -155,17 +126,13 @@ begin
 end$$;
 
 create or replace function public.earnchat_credit(p_user uuid,p_wallet text,p_source text,p_source_id uuid,p_amount bigint,p_country text,p_description text)
-returns bigint
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns bigint language plpgsql security definer set search_path=public,pg_temp as $$
 declare curr text:=case when p_country='KE' then 'KES' else 'NGN' end;cap bigint;earned bigint;inserted uuid;referral public.earnchat_referrals%rowtype;rate numeric;commission bigint;ref_country text;
 begin
  if p_amount<=0 or p_wallet not in('work','referral') then raise exception 'Invalid credit'; end if;
  if p_wallet='work' then
   select public.earnchat_country_amount(daily_cap_ngn,p_country) into cap from public.earnchat_business_settings where id=true;
-  select coalesce(sum(amount),0) into earned from public.earnchat_ledger where user_id=p_user and wallet_type='work' and entry_type='credit' and status='approved' and created_at::date=current_date;
+  select coalesce(sum(amount),0) into earned from public.earnchat_ledger where user_id=p_user and wallet_type='work' and entry_type='credit' and status='approved' and source_type in('chat','task') and created_at::date=current_date;
   if earned+p_amount>cap then raise exception 'Daily earning cap reached'; end if;
  end if;
  insert into public.earnchat_ledger(user_id,wallet_type,entry_type,source_type,source_id,amount,currency,country_code,status,description,approved_at)
@@ -192,11 +159,7 @@ begin
 end$$;
 
 create or replace function public.admin_review_earnchat_referral(p_referral uuid,p_decision text,p_reason text default null)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare uid uuid:=auth.uid();r public.earnchat_referrals%rowtype;credited bigint:=0;
 begin
  if not public.earnchat_is_admin() then raise exception 'Administrator permission required'; end if;
@@ -215,14 +178,8 @@ begin
  return jsonb_build_object('ok',true,'credited',credited);
 end$$;
 
-grant execute on function public.admin_review_earnchat_referral(uuid,text,text) to authenticated;
-
 create or replace function public.admin_review_earnchat_kyc(p_submission uuid,p_decision text,p_reason text default null)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare uid uuid:=auth.uid();k public.earnchat_kyc_submissions%rowtype;
 begin
  if not public.earnchat_is_admin() then raise exception 'Administrator permission required'; end if;
@@ -235,14 +192,8 @@ begin
  return jsonb_build_object('ok',true);
 end$$;
 
-grant execute on function public.admin_review_earnchat_kyc(uuid,text,text) to authenticated;
-
 create or replace function public.admin_update_earnchat_level(p_level text,p_payload jsonb)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 begin
  if not public.earnchat_is_admin() then raise exception 'Administrator permission required'; end if;
  update public.earnchat_level_settings set
@@ -253,14 +204,13 @@ begin
   approved_chats=coalesce((p_payload->>'approved_chats')::int,approved_chats),approved_tasks=coalesce((p_payload->>'approved_tasks')::int,approved_tasks),
   points_required=coalesce((p_payload->>'points_required')::int,points_required),referral_commission_percent=coalesce((p_payload->>'referral_commission_percent')::numeric,referral_commission_percent),updated_at=now()
  where level_name=p_level;
+ if not found then raise exception 'Unknown level'; end if;
+ if exists(select 1 from public.earnchat_level_settings where points_required<0 or referral_commission_percent not between 1 and 7) then raise exception 'Invalid points or commission value'; end if;
  return(select to_jsonb(l) from public.earnchat_level_settings l where level_name=p_level);
 end$$;
 
-grant execute on function public.admin_update_earnchat_level(text,jsonb) to authenticated;
-
 create or replace function public.start_earnchat_chat(p_partner text default null)
-returns jsonb language plpgsql security definer set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare uid uuid:=auth.uid();p public.profiles%rowtype;l public.earnchat_level_settings%rowtype;cnt int;aid uuid;started timestamptz;expires timestamptz;
 begin
  if uid is null then raise exception 'Authentication required'; end if;
@@ -275,11 +225,8 @@ begin
  return jsonb_build_object('attempt_id',aid,'partner',p_partner,'started_at',started,'expires_at',expires,'required_replies',4,'minimum_seconds',45,'daily_limit',l.chat_limit,'remaining',l.chat_limit-cnt);
 end$$;
 
-grant execute on function public.start_earnchat_chat(text) to authenticated;
-
 create or replace function public.get_my_open_chat_attempt()
-returns jsonb language plpgsql security definer set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare a public.earnchat_chat_attempts%rowtype;
 begin
  update public.earnchat_chat_attempts set status='expired' where user_id=auth.uid() and status='started' and expires_at<=now();
@@ -288,11 +235,8 @@ begin
  return jsonb_build_object('attempt_id',a.id,'partner',a.partner_key,'started_at',a.started_at,'expires_at',a.expires_at,'required_replies',4,'minimum_seconds',45);
 end$$;
 
-grant execute on function public.get_my_open_chat_attempt() to authenticated;
-
 create or replace function public.complete_earnchat_chat(p_attempt uuid,p_replies jsonb,p_quality jsonb default '{}'::jsonb)
-returns jsonb language plpgsql security definer set search_path=public,pg_temp
-as $$
+returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
 declare uid uuid:=auth.uid();a public.earnchat_chat_attempts%rowtype;p public.profiles%rowtype;l public.earnchat_level_settings%rowtype;cnt int;reward bigint;sid uuid;credited bigint;distinct_count int;short_count int;
 begin
  select * into a from public.earnchat_chat_attempts where id=p_attempt and user_id=uid for update;
@@ -309,34 +253,64 @@ begin
  reward:=public.earnchat_country_amount(l.chat_reward_ngn,p.country);
  insert into public.earnchat_chat_sessions(user_id,level_name,message_count,duration_seconds,status,reward_amount,currency,country_code,quality_flags)
  values(uid,p.level_name,4,floor(extract(epoch from(now()-a.started_at)))::int,'approved',reward,p.currency,p.country,jsonb_build_object('reply_hashes',(select jsonb_agg(md5(lower(trim(value)))) from jsonb_array_elements_text(p_replies)),'client',coalesce(p_quality,'{}'::jsonb))) returning id into sid;
- credited:=public.earnchat_credit(uid,'work','chat',sid,reward,p.country,'Approved guided conversation');
+ credited:=public.earnchat_credit(uid,'work','chat',sid,reward,p.country,'Approved guided chat');
  update public.earnchat_chat_attempts set status='completed',completed_at=now() where id=a.id;
  perform public.mark_earnchat_active_day(uid);
  return jsonb_build_object('ok',true,'session_id',sid,'amount',credited,'currency',p.currency,'remaining',l.chat_limit-cnt-1,'minimum_seconds',45);
 end$$;
 
-grant execute on function public.complete_earnchat_chat(uuid,jsonb,jsonb) to authenticated;
+create or replace function public.admin_get_earnchat_overview()
+returns jsonb language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if not public.earnchat_is_admin() then raise exception 'Administrator permission required'; end if;
+ return jsonb_build_object(
+  'total_users',(select count(*) from public.profiles),
+  'online_now',(select count(distinct coalesce(user_id::text,visitor_id,session_id)) from public.earnchat_site_presence where is_visible and last_seen>now()-interval '90 seconds'),
+  'pending_tasks',(select count(*) from public.earnchat_task_claims where status='pending'),
+  'pending_withdrawals',(select count(*) from public.earnchat_withdrawals where status in('submitted','under_review','approved','processing')),
+  'pending_kyc',(select count(*) from public.earnchat_kyc_submissions where status in('submitted','under_review')),
+  'suspicious_accounts',(select count(*) from public.profiles where security_review_required or earning_suspended or coalesce(fraud_review_status,'clear')<>'clear'),
+  'work_liability_ngn',(select coalesce(sum(work_available_balance+work_pending_balance),0) from public.profiles where country='NG'),
+  'referral_liability_ngn',(select coalesce(sum(referral_available_balance+referral_pending_balance),0) from public.profiles where country='NG'),
+  'work_liability_kes',(select coalesce(sum(work_available_balance+work_pending_balance),0) from public.profiles where country='KE'),
+  'referral_liability_kes',(select coalesce(sum(referral_available_balance+referral_pending_balance),0) from public.profiles where country='KE')
+ );
+end$$;
 
--- Backfill welcome bonuses and auditable points for existing members.
-select public.earnchat_grant_signup_bonus(id) from public.profiles;
-insert into public.earnchat_point_events(user_id,source_type,source_key,points,description)
-select user_id,'active_day',activity_date::text,5,'Qualifying active day' from public.earnchat_active_days on conflict do nothing;
-insert into public.earnchat_point_events(user_id,source_type,source_key,points,description)
-select user_id,'chat',id::text,2,'Approved guided conversation' from public.earnchat_chat_sessions where status='approved' on conflict do nothing;
-insert into public.earnchat_point_events(user_id,source_type,source_key,points,description)
-select user_id,'task',id::text,3,'Approved task' from public.earnchat_task_claims where status='approved' on conflict do nothing;
-insert into public.earnchat_point_events(user_id,source_type,source_key,points,description)
-select user_id,'kyc',id::text,10,'Approved identity verification' from public.earnchat_kyc_submissions where status='approved' on conflict do nothing;
-insert into public.earnchat_point_events(user_id,source_type,source_key,points,description)
-select referrer_id,'qualified_referral',id::text,10,'Qualified direct referral' from public.earnchat_referrals where status='qualified' on conflict do nothing;
+-- Backfill idempotent bonus and point history for existing members.
+do $$declare r record;begin for r in select id from public.profiles loop perform public.earnchat_grant_signup_bonus(r.id);end loop;end$$;
+insert into public.earnchat_point_events(user_id,source_type,source_key,points,description,created_at)
+select user_id,'chat',id::text,2,'Approved guided conversation',coalesce(completed_at,created_at) from public.earnchat_chat_sessions where status='approved'
+on conflict(user_id,source_type,source_key) do nothing;
+insert into public.earnchat_point_events(user_id,source_type,source_key,points,description,created_at)
+select user_id,'task',id::text,3,'Approved task',coalesce(reviewed_at,submitted_at,created_at) from public.earnchat_task_claims where status='approved'
+on conflict(user_id,source_type,source_key) do nothing;
+insert into public.earnchat_point_events(user_id,source_type,source_key,points,description,created_at)
+select user_id,'active_day',activity_date::text,5,'Qualifying active day',created_at from public.earnchat_active_days
+on conflict(user_id,source_type,source_key) do nothing;
+insert into public.earnchat_point_events(user_id,source_type,source_key,points,description,created_at)
+select user_id,'kyc',id::text,10,'Approved identity verification',coalesce(reviewed_at,created_at) from public.earnchat_kyc_submissions where status='approved'
+on conflict(user_id,source_type,source_key) do nothing;
+insert into public.earnchat_point_events(user_id,source_type,source_key,points,description,created_at)
+select referrer_id,'qualified_referral',id::text,10,'Qualified direct referral',coalesce(qualification_at,created_at) from public.earnchat_referrals where status='qualified'
+on conflict(user_id,source_type,source_key) do nothing;
 update public.profiles p set activity_points=coalesce((select sum(e.points) from public.earnchat_point_events e where e.user_id=p.id),0),updated_at=now();
-select public.evaluate_earnchat_level(id) from public.profiles;
+do $$declare r record;begin for r in select id from public.profiles loop perform public.evaluate_earnchat_level(r.id);end loop;end$$;
 
 revoke all on function public.earnchat_award_points(uuid,text,text,integer,text) from public,anon,authenticated;
 revoke all on function public.earnchat_grant_signup_bonus(uuid) from public,anon,authenticated;
-revoke all on function public.earnchat_credit(uuid,text,text,uuid,bigint,text,text) from public,anon,authenticated;
 revoke all on function public.mark_earnchat_active_day(uuid) from public,anon,authenticated;
 revoke all on function public.evaluate_earnchat_level(uuid) from public,anon,authenticated;
+revoke all on function public.earnchat_credit(uuid,text,text,uuid,bigint,text,text) from public,anon,authenticated;
+grant execute on function public.ensure_earnchat_profile(text,text) to authenticated;
+grant execute on function public.get_my_earnchat_state() to authenticated;
+grant execute on function public.start_earnchat_chat(text) to authenticated;
+grant execute on function public.get_my_open_chat_attempt() to authenticated;
+grant execute on function public.complete_earnchat_chat(uuid,jsonb,jsonb) to authenticated;
+grant execute on function public.admin_review_earnchat_referral(uuid,text,text) to authenticated;
+grant execute on function public.admin_review_earnchat_kyc(uuid,text,text) to authenticated;
+grant execute on function public.admin_update_earnchat_level(text,jsonb) to authenticated;
+grant execute on function public.admin_get_earnchat_overview() to authenticated;
 
 commit;
-select 'Earn Chat welcome bonus, points, direct referral commissions and 45-second chat upgrade completed' as result;
+select 'Earn Chat production-complete bonus, points, commissions, 45-second chat and Admin overview upgrade completed' as result;
