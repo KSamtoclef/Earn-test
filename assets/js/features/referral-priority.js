@@ -1,6 +1,14 @@
 const $=(selector,root=document)=>root.querySelector(selector);
-const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
+let scanTimer=null;
 
+function addTheme(){
+ if(document.querySelector('link[data-referral-priority]'))return;
+ const link=document.createElement('link');
+ link.rel='stylesheet';
+ link.href='./assets/css/referral-priority.css?v=20260731-production-certification-r1';
+ link.dataset.referralPriority='1';
+ document.head.appendChild(link);
+}
 function referralUrl(){return $('#ref-link')?.value?.trim()||''}
 
 async function shareReferral(button){
@@ -8,13 +16,8 @@ async function shareReferral(button){
  if(!url){location.hash='#/referrals';return}
  const text='Join me on Earn Chat, complete approved activities and track your rewards.';
  try{
-  if(navigator.share){
-   await navigator.share({title:'Join Earn Chat',text,url});
-   button.textContent='Shared';
-  }else{
-   await navigator.clipboard.writeText(url);
-   button.textContent='Referral link copied';
-  }
+  if(navigator.share){await navigator.share({title:'Join Earn Chat',text,url});button.textContent='Shared'}
+  else{await navigator.clipboard.writeText(url);button.textContent='Referral link copied'}
  }catch(error){
   if(error?.name==='AbortError')return;
   try{await navigator.clipboard.writeText(url);button.textContent='Referral link copied'}catch{button.textContent='Open Referrals'}
@@ -58,10 +61,11 @@ function enhanceReferralPage(){
 }
 
 function enhance(){enhanceHome();enhanceReferralPage()}
-function schedule(){[40,180,600].forEach(delay=>setTimeout(enhance,delay))}
+function schedule(){clearTimeout(scanTimer);scanTimer=setTimeout(enhance,80)}
 
+addTheme();
 window.addEventListener('hashchange',schedule);
 window.addEventListener('pageshow',schedule);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
-new MutationObserver(()=>schedule()).observe(document.body,{childList:true,subtree:true});
+new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
 schedule();
