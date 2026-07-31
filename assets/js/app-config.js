@@ -1,6 +1,6 @@
 export const SUPABASE_URL='https://ijjmgrfgyqtsvigzjdjp.supabase.co';
 export const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqam1ncmZneXF0c3ZpZ3pqZGpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NjMxMzcsImV4cCI6MjA5OTAzOTEzN30.TFOOIJDK9YXa8mSBXcgQ2IqIfqD-0UhcBhIEN8QxeDE';
-export const ROUTES=['landing','register','login','home','earn','chat','tasks','visits','referrals','withdraw','profile','admin'];
+export const ROUTES=['landing','register','login','home','earn','chat','tasks','visits','upgrade','referrals','withdraw','profile','admin'];
 export const COUNTRY_FALLBACK={NG:{code:'NG',name:'Nigeria',currency:'NGN',symbol:'₦',locale:'en-NG',cycle:50000},KE:{code:'KE',name:'Kenya',currency:'KES',symbol:'KSh ',locale:'en-KE',cycle:40000}};
 export const CHAT_PROMPTS=[
  {prompt:'Hey! How has your day been so far?',suggestions:['It has been good. I have been trying to stay productive.','It has been a little busy, but I am doing okay.']},
