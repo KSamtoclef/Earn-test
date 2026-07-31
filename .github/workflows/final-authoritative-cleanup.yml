@@ -1,0 +1,84 @@
+name: Final authoritative cleanup
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Consolidate customer runtime
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, old, new, required=True):
+              p=Path(path); text=p.read_text()
+              if old not in text:
+                  if required: raise SystemExit(f'Missing expected text in {path}: {old[:100]}')
+                  return
+              p.write_text(text.replace(old,new))
+
+          app='assets/js/app.js'
+          replace(app,"const RELEASE='20260731-production-certification-r1';","const RELEASE='20260731-production-certification-r1';\nconst CHAT_SECONDS=45;")
+          replace(app,'About 2 minutes · ${reward} after approval','About 45 seconds · ${reward} after approval')
+          replace(app,'minimum two minutes','minimum 45 seconds')
+          replace(app,"remaining=Math.max(0,120-elapsed)","remaining=Math.max(0,CHAT_SECONDS-elapsed)")
+          replace(app,"$('#chat-timer').textContent=`${fmt(elapsed)} / 02:00`","$('#chat-timer').textContent=`${fmt(elapsed)} / 00:45`")
+          replace(app,'the two-minute session','the 45-second session')
+          replace(app,"<120)return","<CHAT_SECONDS)return")
+          replace(app,"{duplicate_replies:false,reply_lengths:app.chat.replies.map(x=>x.length)}","{duplicate_replies:false,reply_lengths:app.chat.replies.map(x=>x.length),minimum_seconds:CHAT_SECONDS}")
+          replace(app,"app.country=app.profile.country||app.country;localStorage.setItem('earnchat-country',app.country)","app.country=app.profile.country||app.country;localStorage.setItem('earnchat-country',app.country);window.dispatchEvent(new CustomEvent('earnchat:member-state',{detail:app.state}))")
+          replace(app,"if(name==='earn'){await refreshState();renderEarn()}","if(name==='earn'){await refreshState();renderEarn()}if(name==='upgrade'){await refreshState();window.dispatchEvent(new CustomEvent('earnchat:member-state',{detail:app.state}))}")
+          replace(app,"<button class=\"${locked?'secondary':'primary'} task-start\" data-id=\"${r.id}\" ${locked?'disabled':''}>${locked?`Unlock ${esc(r.required_level)} to start`:'View guide and start'}</button>","<button class=\"${locked?'secondary locked-level-action':'primary'} task-start\" ${locked?'data-go=\"upgrade\"':`data-id=\"${r.id}\"`}>${locked?`View ${esc(r.required_level)} upgrade requirements`:'View guide and start'}</button>")
+          replace(app,"$$('.task-start',host).forEach(b=>b.onclick=()=>openTask(rows.find(r=>r.id===b.dataset.id)));","$$('.task-start[data-id]',host).forEach(b=>b.onclick=()=>openTask(rows.find(r=>r.id===b.dataset.id)));")
+
+          index='index.html'
+          replace(index,'00:00 / 02:00','00:00 / 00:45')
+          replace(index,'timer reaches two minutes','timer reaches 45 seconds')
+          replace(index,'About 2 minutes · Reward after approval','About 45 seconds · Reward after approval')
+
+          loader='assets/js/supabase-client.js'
+          replace(loader,"loadFeature('./assets/js/features/guided-chat-experience.js','guided-chat-experience');\n",'')
+
+          journey='assets/js/features/level-journey.js'
+          replace(journey,"const route=document.body.dataset.route;const target=['earn','tasks','visits','referrals','profile'].includes(route)?$(`#view-${route} .container`):null;","const route=document.body.dataset.route;const target=['earn','tasks','visits','referrals','withdraw','profile'].includes(route)?$(`#view-${route} .container`):null;")
+          replace(journey,"catch{const host=$('#upgrade-content');if(route==='upgrade'&&host)host.innerHTML='<div class=\"form-message error show\">Level progress could not load. Check your connection and try again.</div>'}","catch(error){const host=$('#upgrade-content');if(route==='upgrade'&&host)host.innerHTML=`<article class=\"card upgrade-load-error\"><h2>Level progress could not load</h2><p>${String(error?.message||'Check your connection and try again.')}</p><button id=\"upgrade-retry\" class=\"primary\" type=\"button\">Retry level progress</button></article>`;$('#upgrade-retry')?.addEventListener('click',()=>schedule(0,true),{once:true})}")
+          replace(journey,"function unlockLockedTaskButtons(){$$('.task-start[disabled]').forEach(button=>{button.disabled=false;button.classList.add('locked-level-action');button.dataset.go='upgrade';button.removeAttribute('data-id');button.setAttribute('aria-label',`${button.textContent}. View upgrade requirements`)})}","function unlockLockedTaskButtons(){$$('.task-start.locked-level-action').forEach(button=>{button.disabled=false;button.dataset.go='upgrade';button.removeAttribute('data-id');button.setAttribute('aria-label',`${button.textContent}. View upgrade requirements`)})}")
+
+          validator='scripts/validate-production.mjs'
+          text=Path(validator).read_text()
+          text=text.replace(",'assets/js/features/guided-chat-experience.js'",'')
+          text=text.replace(",'guided-chat-experience'",'')
+          text=text.replace("'assets/js/features/guided-chat-experience.js',",'')
+          text=text.replace("if(/setInterval\\([^,]+,\\s*(?:350|500)\\)/.test(read('assets/js/features/guided-chat-experience.js')))fail.push('High-frequency guided-chat page scanner remains.');\n",'')
+          anchor="if(interaction.includes(\"activate('profile')\")&&interaction.includes('Open earned level progress'))fail.push('Legacy Profile-based fake Upgrade navigation remains.');"
+          addition=anchor+"\nconst appCore=read('assets/js/app.js');\nfor(const forbidden of ['120-elapsed','/ 02:00','minimum two minutes','two-minute session'])if(appCore.includes(forbidden)||html.includes(forbidden))fail.push(`Legacy two-minute chat remains: ${forbidden}`);\nfor(const token of ['CHAT_SECONDS=45','minimum 45 seconds','minimum_seconds:CHAT_SECONDS',\"if(name==='upgrade'){await refreshState()\",\"earnchat:member-state\"])if(!appCore.includes(token))fail.push(`Authoritative customer core missing: ${token}`);\nif(loader.includes('guided-chat-experience'))fail.push('Duplicate guided-chat override is still loaded.');\nif(fs.existsSync(path.join(root,'assets/js/features/guided-chat-experience.js')))fail.push('Obsolete guided-chat override file still exists.');"
+          if anchor not in text: raise SystemExit('Validator anchor missing')
+          Path(validator).write_text(text.replace(anchor,addition))
+
+          Path('assets/js/features/guided-chat-experience.js').unlink(missing_ok=True)
+      - name: Validate JavaScript and production contracts
+        run: |
+          node --check assets/js/app.js
+          node --check assets/js/features/level-journey.js
+          node --check assets/js/supabase-client.js
+          node scripts/validate-production.mjs
+      - name: Commit authoritative cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Consolidate 45-second chat and reliable upgrade journey"
+          git push
