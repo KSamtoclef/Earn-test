@@ -3,7 +3,8 @@ import{money}from'../app-config.js';
 
 const $=(selector,root=document)=>root.querySelector(selector);
 const ORDER=['Starter','Active','Pro','Elite'];
-let loading=false,lastRender=0;
+let loading=false,lastState=null,lastLoadedAt=0,renderTimer=null;
+const CACHE_MS=8000;
 
 function daysSince(value){const t=Date.parse(value||'');return Number.isFinite(t)?Math.max(0,Math.floor((Date.now()-t)/86400000)):0}
 function countryAmount(base,country,multiplier){return Math.round(Number(base||0)*(country==='KE'?Number(multiplier||.6):1))}
@@ -16,11 +17,13 @@ function ensureStyles(){if(document.querySelector('link[data-level-journey]'))re
 function renderCard(data,compact=false){const currentCfg=data.config?.levels?.[data.current]||{},currentRate=Number(currentCfg.referral_commission_percent||1);if(data.isTop)return`<article class="level-journey-card elite"><div><span class="eyebrow">HIGHEST LEVEL</span><h2>Elite unlocked</h2><p>Keep your quality strong to retain 10 daily chats and 7% direct-referral commission.</p></div><div class="level-reward"><small>CHAT REWARD</small><b>${levelReward(data.config,'Elite',data.country)}</b><span>${Number(data.profile.activity_points||0)} Activity Points</span></div></article>`;const reward=levelReward(data.config,data.next,data.country),nextRate=Number(data.target.referral_commission_percent||currentRate),requirements=data.requirements.map(item=>`<div class="level-requirement ${item.done?'done':''}"><span>${item.done?'✓':'○'}</span><div><b>${item.label}</b><small>${Math.min(item.current,item.target)} of ${item.target}</small></div></div>`).join('');return`<article class="level-journey-card ${compact?'compact':''}"><header><div><span class="eyebrow">EARNED UPGRADE</span><h2>${data.current} → ${data.next}</h2><p>No payment required. Complete genuine activity to unlock more.</p></div><div class="level-reward"><small>${data.next.toUpperCase()} CHAT</small><b>${reward}</b><span>${Number(data.target.chat_limit||0)} daily · ${nextRate}% referral commission</span></div></header><div class="level-score"><div><b>${data.score}% ready</b><span>${Number(data.profile.activity_points||0)} points · current commission ${currentRate}%</span></div><div class="progress"><i style="width:${data.score}%"></i></div></div><div class="level-requirements">${requirements}</div><button class="primary level-action" type="button" data-go="${data.requirements.find(x=>!x.done)?.label.includes('KYC')?'profile':'tasks'}">${data.score===100?'Requirements complete—refresh status':'Continue earning toward '+data.next}</button></article>`}
 function placeHome(data){const home=$('#view-home .container');if(!home)return;let card=$('#home-level-journey');if(!card){card=document.createElement('div');card.id='home-level-journey';const target=$('#member-welcome-card')||$('#home-referral-priority')||$('.next-action',home);target?.insertAdjacentElement('afterend',card)}card.innerHTML=renderCard(data,true)}
 function placeProfile(data){const profile=$('#view-profile .container');if(!profile)return;let card=$('#profile-level-journey');if(!card){card=document.createElement('div');card.id='profile-level-journey';const hero=$('.profile-hero',profile);hero?.insertAdjacentElement('afterend',card)}card.innerHTML=renderCard(data,false)}
-async function enhance(){if(loading||Date.now()-lastRender<700)return;const hash=location.hash;if(!hash.includes('home')&&!hash.includes('profile'))return;loading=true;try{const state=await api.state();const data=progressData(state);placeHome(data);placeProfile(data);lastRender=Date.now()}catch{}finally{loading=false}}
-function schedule(){[80,350,900].forEach(delay=>setTimeout(enhance,delay))}
+function renderState(state){if(!state)return;lastState=state;lastLoadedAt=Date.now();const hash=location.hash;if(!hash.includes('home')&&!hash.includes('profile'))return;const data=progressData(state);if(hash.includes('home'))placeHome(data);if(hash.includes('profile'))placeProfile(data)}
+async function enhance(){const hash=location.hash;if(!hash.includes('home')&&!hash.includes('profile'))return;if(lastState&&Date.now()-lastLoadedAt<CACHE_MS){renderState(lastState);return}if(loading)return;loading=true;try{renderState(await api.state())}catch{}finally{loading=false}}
+function schedule(delay=100){clearTimeout(renderTimer);renderTimer=setTimeout(enhance,delay)}
 
 ensureStyles();
-window.addEventListener('hashchange',schedule);
-window.addEventListener('pageshow',schedule);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule()});
-schedule();
+window.addEventListener('earnchat:member-state',event=>renderState(event.detail));
+window.addEventListener('hashchange',()=>schedule(80));
+window.addEventListener('pageshow',()=>schedule(80));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule(80)});
+schedule(0);
