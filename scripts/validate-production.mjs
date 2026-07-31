@@ -1,15 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {execFileSync} from 'node:child_process';
+import {execFileSync} from'node:child_process';
 
 const root=process.cwd(),fail=[];
 const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]):[];
 const relative=file=>path.relative(root,file).replaceAll('\\','/');
 const RELEASE='20260731-production-certification-r1';
 const requiredFiles=[
- 'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/js/app-config.js','assets/js/supabase-client.js',
+ 'index.html','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/css/professional-ui.css','assets/js/app-config.js','assets/js/supabase-client.js',
  'assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js',
- 'assets/js/features/qualification.js','assets/js/features/analytics.js','assets/js/features/task-status.js',
+ 'assets/js/features/qualification.js','assets/js/features/analytics.js','assets/js/features/task-status.js','assets/js/features/interaction-design.js',
  'supabase/earnchat_production_install.sql','supabase/earnchat_production_verify.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 for(const file of requiredFiles)if(!fs.existsSync(path.join(root,file)))fail.push(`Missing required file: ${file}`);
@@ -36,10 +36,15 @@ const forbiddenRuntimeNames=['sponsored-visits-upgrade.js','linked-task-marketpl
 for(const name of forbiddenRuntimeNames)if(runtimeFiles.some(f=>path.basename(f)===name))fail.push(`Obsolete runtime file still exists: ${name}`);
 
 const loader=fs.readFileSync(path.join(root,'assets/js/supabase-client.js'),'utf8');
-for(const token of ['./assets/js/features/task-status.js','./assets/js/features/qualification.js','./assets/js/features/analytics.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
+for(const token of ['./assets/js/features/task-status.js','./assets/js/features/qualification.js','./assets/js/features/analytics.js','./assets/js/features/interaction-design.js'])if(!loader.includes(token))fail.push(`Feature module is not loaded: ${token}`);
 if(loader.includes('./assets/js/features/feedback.js'))fail.push('Duplicate landing feedback renderer is still loaded.');
 if(!loader.includes(`RELEASE_VERSION='${RELEASE}'`))fail.push('Certification release identifier missing from feature loader.');
 if(/kyc-bulk-upgrade|admin\/enhancements/.test(loader))fail.push('Obsolete KYC or Admin override module is still loaded.');
+
+const interaction=fs.readFileSync(path.join(root,'assets/js/features/interaction-design.js'),'utf8');
+for(const token of ['professional-ui.css','interactive-surface','surface-action','Create your free account','Open guided chats','Open work wallet'])if(!interaction.includes(token))fail.push(`Interaction design missing: ${token}`);
+const professionalCss=fs.readFileSync(path.join(root,'assets/css/professional-ui.css'),'utf8');
+for(const token of ['--ec-page','interactive-surface','landing-section','surface-action','prefers-reduced-motion'])if(!professionalCss.includes(token))fail.push(`Professional theme missing: ${token}`);
 
 const app=fs.readFileSync(path.join(root,'assets/js/app.js'),'utf8');
 for(const token of ['openKycFlow','restoreOpenTask','restoreOpenChatBanner','openTaskClaim','openChatAttempt','cancelChatAttempt','EXAMPLE DASHBOARD','social-proof-section','member-feedback-list'])if(!app.includes(token))fail.push(`Customer core missing: ${token}`);
@@ -73,4 +78,4 @@ if(fs.existsSync(path.join(root,'supabase','earnchat_production_certification_up
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat production validation passed.');
-console.log(`Checked ${requiredFiles.length} required files, ${runtimeFiles.length} runtime modules, core customer/Admin ownership, selectors, release versions, legacy removal and the consolidated recovery SQL contract.`);
+console.log(`Checked ${requiredFiles.length} required files, ${runtimeFiles.length} runtime modules, professional interaction design, core customer/Admin ownership, selectors, release versions, legacy removal and the consolidated recovery SQL contract.`);
