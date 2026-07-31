@@ -2,6 +2,8 @@ import{sb}from'./supabase-client.js';
 const unwrap=r=>{if(r.error)throw r.error;return r.data};
 const rpc=(name,args={})=>sb.rpc(name,args).then(unwrap);
 const select=(table,columns='*')=>sb.from(table).select(columns);
+const maskAccount=value=>{const raw=String(value||'').replace(/\s+/g,'');if(!raw)return'';return`${'•'.repeat(Math.max(4,Math.min(8,raw.length-4)))}${raw.slice(-4)}`};
+const maskWithdrawal=row=>({...row,payout_snapshot:{account_name:row.payout_snapshot?.account_name||'',provider:row.payout_snapshot?.provider||'',account_number:maskAccount(row.payout_snapshot?.account_number)}});
 export const api={
  session:async()=>unwrap(await sb.auth.getSession()),
  signup:async(email,password,fullName,country)=>unwrap(await sb.auth.signUp({email,password,options:{data:{full_name:fullName,country}}})),
@@ -47,7 +49,7 @@ export const api={
  adminUpdateKycConfig:async payload=>rpc('admin_update_earnchat_kyc_config',{p_payload:payload}),
  adminReviewKyc:async(id,decision,reason)=>rpc('admin_review_earnchat_kyc',{p_submission:id,p_decision:decision,p_reason:reason||null}),
  adminBulkReviewKyc:async(ids,decision,reason)=>rpc('admin_bulk_review_earnchat_kyc',{p_submissions:ids,p_decision:decision,p_reason:reason||null}),
- adminWithdrawals:async(limit=200,offset=0)=>unwrap(await select('earnchat_withdrawals').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
+ adminWithdrawals:async(limit=200,offset=0)=>(unwrap(await select('earnchat_withdrawals').order('created_at',{ascending:false}).range(offset,offset+limit-1))||[]).map(maskWithdrawal),
  adminReviewWithdrawal:async(id,status,reason,reference,publish)=>rpc('admin_review_earnchat_withdrawal',{p_withdrawal:id,p_status:status,p_reason:reason||null,p_reference:reference||null,p_publish:!!publish}),
  adminUsers:async(limit=200,offset=0)=>unwrap(await select('profiles','id,email,full_name,country,currency,level_name,active_days_count,approved_chats_count,approved_tasks_count,task_rejection_count,chat_rejection_count,work_available_balance,work_pending_balance,referral_available_balance,referral_pending_balance,total_withdrawn,kyc_status,security_review_required,fraud_review_status,earning_suspended,is_admin,last_visit_at,account_created_at').order('account_created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminUserControl:async(userId,action,reason)=>rpc('admin_update_earnchat_user_control',{p_user:userId,p_action:action,p_reason:reason||null}),
