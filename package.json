@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "validate": "node scripts/validate-production.mjs",
+    "validate": "node scripts/validate-production.mjs && node scripts/validate-deployment.mjs",
     "build": "npm run validate && node scripts/build-static.mjs",
     "test": "npm run validate"
   }
