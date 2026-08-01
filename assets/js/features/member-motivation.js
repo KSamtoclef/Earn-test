@@ -7,12 +7,43 @@ function route(){return document.body.dataset.route||location.hash.replace(/^#\/
 function amount(base,country,multiplier=.6){return Math.round(Number(base||0)*(country==='KE'?Number(multiplier):1))}
 function country(state){return state?.profile?.country||countryFromStorage()}
 function formatBase(base,state){const code=country(state),multiplier=state?.config?.settings?.kenya_multiplier||.6;return money(amount(base,code,multiplier),code)}
-function hidePublicPresence(){const stats=$('#public-stats');if(stats){stats.classList.add('hidden');stats.setAttribute('aria-hidden','true')}$('#public-online')?.closest('.stat')?.remove()}
-function renderLanding(state){const code=country(state),settings=state?.config?.settings||{},bonus=money(amount(settings.signup_bonus_ngn||2000,code,settings.kenya_multiplier||.6),code),title=$('#landing-title'),copy=$('#landing-copy'),value=$('#landing-chat'),detail=$('#landing-chat-detail'),note=$('#landing-note');if(title)title.innerHTML=`Get <span>${bonus}</span> when you join.<br>Then keep earning.`;if(copy)copy.innerHTML='Create your free account and receive a real welcome bonus.<br><strong>Grow it through approved chats, tasks and referrals.</strong>';if(value)value.textContent=bonus;if(detail)detail.textContent='One-time registration welcome bonus';if(note)note.textContent=code==='KE'?'No payment required · KSh wallet · M-Pesa supported':'No payment required · ₦ wallet · Bank payout supported';const preview=$('#preview-balance');if(preview)preview.textContent=bonus}
-function renderSignup(state){const code=country(state),settings=state?.config?.settings||{},bonus=money(amount(settings.signup_bonus_ngn||2000,code,settings.kenya_multiplier||.6),code),summary=$('#signup-country-summary');if(summary)summary.innerHTML=`<b>${code==='KE'?'🇰🇪 Kenya':'🇳🇬 Nigeria'} selected</b><br><strong>${bonus} welcome bonus</strong><br>${COUNTRY_FALLBACK[code].currency} · ${code==='KE'?'M-Pesa':'Bank transfer'}`;const form=$('#register-form');if(form&&!$('#signup-bonus-banner')){const banner=document.createElement('article');banner.id='signup-bonus-banner';banner.className='signup-bonus-banner';banner.innerHTML=`<span>WELCOME BONUS</span><b>${bonus}</b><small>Credited once. Normal withdrawal rules still apply.</small>`;form.prepend(banner)}else if($('#signup-bonus-banner b'))$('#signup-bonus-banner b').textContent=bonus}
+function renderLanding(state){
+  const code=country(state),settings=state?.config?.settings||{},bonus=money(amount(settings.signup_bonus_ngn||2000,code,settings.kenya_multiplier||.6),code),title=$('#landing-title'),copy=$('#landing-copy'),value=$('#landing-chat'),detail=$('#landing-chat-detail'),note=$('#landing-note');
+  if(title)title.innerHTML=`Get <span>${bonus}</span> when you join.<br>Then keep earning.`;
+  if(copy)copy.innerHTML='Create your free account and receive a real welcome bonus.<br><strong>Grow it through approved chats, tasks and referrals.</strong>';
+  if(value)value.textContent=bonus;
+  if(detail)detail.textContent='One-time registration welcome bonus';
+  if(note)note.textContent=code==='KE'?'No payment required · KSh wallet · M-Pesa supported':'No payment required · ₦ wallet · Bank payout supported';
+  const preview=$('#preview-balance');if(preview)preview.textContent=bonus;
+}
+function renderSignup(state){
+  const code=country(state),settings=state?.config?.settings||{},bonus=money(amount(settings.signup_bonus_ngn||2000,code,settings.kenya_multiplier||.6),code),summary=$('#signup-country-summary');
+  if(summary)summary.innerHTML=`<b>${code==='KE'?'🇰🇪 Kenya':'🇳🇬 Nigeria'} selected</b><br><strong>${bonus} welcome bonus</strong><br>${COUNTRY_FALLBACK[code].currency} · ${code==='KE'?'M-Pesa':'Bank transfer'}`;
+  const form=$('#register-form');
+  if(form&&!$('#signup-bonus-banner')){
+    const banner=document.createElement('article');banner.id='signup-bonus-banner';banner.className='signup-bonus-banner';
+    banner.innerHTML=`<span>WELCOME BONUS</span><b>${bonus}</b><small>Credited once. Normal withdrawal rules still apply.</small>`;
+    form.prepend(banner);
+  }else if($('#signup-bonus-banner b'))$('#signup-bonus-banner b').textContent=bonus;
+}
 function commission(state){const current=state.profile?.level_name||'Starter',order=['Starter','Active','Pro','Elite'],next=order[Math.min(order.indexOf(current)+1,order.length-1)],rate=Number(state.config?.levels?.[current]?.referral_commission_percent||1),nextRate=Number(state.config?.levels?.[next]?.referral_commission_percent||rate);return{current,next,rate,nextRate}}
-function renderReferrals(state){const view=$('#view-referrals .container');if(!view)return;sessionStorage.setItem('earnchat-referral-opened','1');const settings=state.config?.settings||{},reward=formatBase(settings.referral_reward_ngn||500,state),level=commission(state);let guide=$('#referral-earning-guide');if(!guide){guide=document.createElement('section');guide.id='referral-earning-guide';guide.className='referral-earning-guide';$('.balance-card',view)?.insertAdjacentElement('afterend',guide)}guide.innerHTML=`<span class="eyebrow">DIRECT REFERRALS</span><h2>${reward} per qualified member</h2><div class="commission-upgrade"><span>${level.rate}% now</span><b>→</b><span>${level.nextRate}% at ${level.next}</span></div><p>Your referral keeps all their earnings. Your commission is recorded separately.</p><button class="secondary" data-go="upgrade" type="button">Increase commission →</button><details><summary>How qualification works</summary><ol><li>Share your personal link</li><li>Your friend registers and becomes active</li><li>Admin confirms qualification</li><li>Your reward and direct commission are recorded</li></ol></details>`}
-async function enhance(){hidePublicPresence();const current=route();if(current==='landing'||current==='register'){let config=null;try{config=await api.business()}catch{}const state={profile:{country:countryFromStorage()},config};renderLanding(state);renderSignup(state);return}if(current!=='referrals')return;try{renderReferrals(await api.state())}catch{}}
+function renderReferrals(state){
+  const view=$('#view-referrals .container');if(!view)return;
+  sessionStorage.setItem('earnchat-referral-opened','1');
+  const settings=state.config?.settings||{},reward=formatBase(settings.referral_reward_ngn||500,state),level=commission(state);
+  let guide=$('#referral-earning-guide');
+  if(!guide){guide=document.createElement('section');guide.id='referral-earning-guide';guide.className='referral-earning-guide';$('.balance-card',view)?.insertAdjacentElement('afterend',guide)}
+  guide.innerHTML=`<span class="eyebrow">DIRECT REFERRALS</span><h2>${reward} per qualified member</h2><div class="commission-upgrade"><span>${level.rate}% now</span><b>→</b><span>${level.nextRate}% at ${level.next}</span></div><p>Your referral keeps all their earnings. Your commission is recorded separately.</p><button class="secondary" data-go="upgrade" type="button">Increase commission →</button><details><summary>How qualification works</summary><ol><li>Share your personal link</li><li>Your friend registers and becomes active</li><li>Admin confirms qualification</li><li>Your reward and direct commission are recorded</li></ol></details>`;
+}
+async function enhance(){
+  const current=route();
+  if(current==='landing'||current==='register'){
+    let config=null;try{config=await api.business()}catch{}
+    const state={profile:{country:countryFromStorage()},config};renderLanding(state);renderSignup(state);return;
+  }
+  if(current!=='referrals')return;
+  try{const state=await api.state();if(state)renderReferrals(state)}catch{}
+}
 function schedule(delay=30){clearTimeout(timer);timer=setTimeout(enhance,delay)}
-window.addEventListener('hashchange',()=>schedule());
-hidePublicPresence();schedule(0);
+document.addEventListener('earnchat:route-view',()=>schedule());
+schedule(0);
