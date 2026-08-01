@@ -17,13 +17,9 @@ replace(
 "'earnchat:config-updated','getPublicOrigin(app.config)','landingConfig()','taskConfig()','referralConfig()','withdrawalConfig()','kycConfig()'",
 'customer configuration tokens'
 );
-replace(
-"for(const token of ['restart-required','pending-review','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])",
-"for(const token of ['restart-required','pending-review','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])",
-'task status marker'
-);
 const insertion="\nfor(const token of ['cancelTask','cancel_earnchat_task_claim'])if(!api.includes(token))fail.push(`Task restart API contract missing: ${token}`);\nfor(const token of ['earnchat_chat_contract','required_replies','minimum_reply_length','attempt_expiry_minutes','earnchat_reconcile_points','complete_earnchat_chat'])if(!dynamicChat.includes(token))fail.push(`Dynamic chat SQL contract missing: ${token}`);\nfor(const token of ['cancel_earnchat_task_claim','status=\'expired\'','Restarted by member','grant execute'])if(!taskRestart.includes(token))fail.push(`Task restart SQL contract missing: ${token}`);\nfor(const token of ['registration_enabled','social_proof_enabled','restart_required_message','pending_review_message','maintenance_message'])if(!app.includes(token))fail.push(`Final customer configuration coverage missing: ${token}`);\n";
 const marker="for(const token of ['configuration_version','general_config jsonb'";
 if(!source.includes(marker))throw new Error('Missing SQL validation insertion marker');
 source=source.replace(marker,insertion+marker);
 fs.writeFileSync(path,source);
+
