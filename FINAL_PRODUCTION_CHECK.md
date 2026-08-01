@@ -1,6 +1,6 @@
 # Earn Chat final production check
 
-Commit: fb8585967c52bd2fc289b25f89ae3932bf2515f9
+Commit: 2ebb14362e1d7a1f942d5cccec292847c344398c
 Validation exit: 1
 Build exit: 1
 
