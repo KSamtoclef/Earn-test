@@ -74,13 +74,13 @@ if((router.match(/addEventListener\(['"]hashchange/g)||[]).length>1)failures.pus
 
 for(const token of ["renderConfiguration}from'./configuration.js'",'configuration:renderConfiguration','PAGE_SIZE=50','renderToken'])requireToken(adminCore,token,'Admin ownership contract missing');
 forbidToken(adminCore,'async function configuration(){','Legacy Admin Configuration renderer remains');
-for(const token of ['admin-config-section','admin-config-form','generalForm','landingForm','chatForm','tasksForm','referralForm','withdrawalForm','kycForm','featureForm','levelForm','adminUpdateConfiguration','adminUpdateLevel','configuration_version','earnchat:form-rendered','earnchat:form-save-succeeded'])requireToken(adminConfig,token,'Admin configuration control missing');
+for(const token of ['admin-config-section','admin-config-form','generalForm','landingForm','chatForm','tasksForm','referralForm','withdrawalForm','kycForm','flagsForm','levelsForm','adminUpdateConfiguration','adminUpdateLevel','configuration_version','earnchat:form-rendered','earnchat:form-save-succeeded'])requireToken(adminConfig,token,'Admin configuration control missing');
 
 for(const token of ['earnchat:form-rendered','earnchat:form-save-succeeded','earnchat:form-save-failed','earnchat-draft:v2','BLOCKED_IDS','BLOCKED_TYPES'])requireToken(drafts,token,'Draft recovery contract missing');
 for(const token of ['scheduleScan','checks<16',"addEventListener('pageshow'"])forbidToken(drafts,token,'Obsolete draft scanner remains');
 for(const token of ['earnchat:chat-completion-requested','earnchat:withdrawal-requested','earnchat:task-opened','earnchat:referral-shared'])requireToken(analytics,token,'Semantic analytics event missing');
 for(const token of ['#chat-complete','#withdraw-form'])forbidToken(analytics,token,'Analytics binds a core control directly');
-for(const token of ['restart-required','pending-review','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])requireToken(taskStatus,token,'Task lifecycle contract missing');
+for(const token of ['task-incomplete','task-pending','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])requireToken(taskStatus,token,'Task lifecycle contract missing');
 
 for(const token of ['configuration_version','general_config jsonb','landing_config jsonb','chat_config jsonb','task_config jsonb','referral_config jsonb','withdrawal_config jsonb','kyc_config jsonb','feature_flags jsonb','earnchat_validate_configuration_section','admin_update_earnchat_configuration','get_earnchat_business_config','earnchat_admin_audit'])requireToken(configSql,token,'Configuration SQL contract missing');
 for(const token of ['earnchat_chat_contract','minimum_seconds','required_replies','minimum_reply_length','attempt_expiry_minutes','activity_points','earnchat_reconcile_points','start_earnchat_chat','get_my_open_chat_attempt','complete_earnchat_chat'])requireToken(chatSql,token,'Dynamic chat SQL contract missing');
