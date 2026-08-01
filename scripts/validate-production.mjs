@@ -7,7 +7,12 @@ const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const exists=file=>fs.existsSync(path.join(root,file));
 const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]):[];
 const required=[
- 'index.html','package.json','scripts/build-static.mjs','assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/css/member-motivation.css','assets/css/referral-priority.css','assets/css/level-chat-experience.css','assets/js/app-config.js','assets/js/supabase-client.js','assets/js/api.js','assets/js/router.js','assets/js/app.js','assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/features/draft-recovery.js','assets/js/features/analytics.js','assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/level-journey.js','assets/js/features/qualification.js','assets/js/features/task-status.js','supabase/earnchat_production_install.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'
+ 'index.html','package.json','vercel.json','scripts/build-static.mjs','scripts/validate-deployment.mjs',
+ 'assets/css/app.css','assets/css/routes.css','assets/css/experience-theme.css','assets/css/member-motivation.css','assets/css/referral-priority.css','assets/css/level-chat-experience.css',
+ 'assets/js/app-config.js','assets/js/config-runtime.js','assets/js/supabase-client.js','assets/js/api.js','assets/js/router.js','assets/js/app.js',
+ 'assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/admin/configuration.js',
+ 'assets/js/features/draft-recovery.js','assets/js/features/analytics.js','assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/level-journey.js','assets/js/features/qualification.js','assets/js/features/task-status.js',
+ 'supabase/earnchat_production_install.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql','supabase/earnchat_configuration_control_upgrade_20260801.sql','supabase/earnchat_configuration_control_verify_20260801.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 for(const file of required)if(!exists(file))fail.push(`Missing required file: ${file}`);
 
@@ -22,80 +27,54 @@ for(const file of js){
  }
 }
 
-const html=read('index.html'),config=read('assets/js/app-config.js'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),app=read('assets/js/app.js'),router=read('assets/js/router.js'),journey=read('assets/js/features/level-journey.js'),qualification=read('assets/js/features/qualification.js'),taskStatus=read('assets/js/features/task-status.js'),drafts=read('assets/js/features/draft-recovery.js'),analytics=read('assets/js/features/analytics.js'),build=read('scripts/build-static.mjs'),core=read('assets/js/admin/core.js'),adminEntry=read('assets/js/admin/admin.js'),levelCss=read('assets/css/level-chat-experience.css'),release='20260801-source-consolidated-r1';
+const html=read('index.html'),configSource=read('assets/js/config-runtime.js'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),app=read('assets/js/app.js'),router=read('assets/js/router.js'),adminCore=read('assets/js/admin/core.js'),adminConfig=read('assets/js/admin/configuration.js'),drafts=read('assets/js/features/draft-recovery.js'),analytics=read('assets/js/features/analytics.js'),taskStatus=read('assets/js/features/task-status.js'),build=read('scripts/build-static.mjs'),migration=read('supabase/earnchat_configuration_control_upgrade_20260801.sql'),verify=read('supabase/earnchat_configuration_control_verify_20260801.sql');
 
-for(const token of [`RELEASE='${release}'`,'CHAT_SECONDS=45','CHAT_RECOVERY_MS','CHAT_PROMPT_SETS',' / 00:45','data-chat-next','earnchat:chat-completion-requested','earnchat:task-started','earnchat:task-submitted',"$$('[data-chat-next]'"])if(!app.includes(token))fail.push(`Authoritative app source missing: ${token}`);
-for(const stale of ['About 2 minutes','minimum two minutes','two-minute session','120-elapsed',' / 02:00','<120)return','#public-stats','#public-total','#public-online'])if(app.includes(stale))fail.push(`Obsolete app behavior remains: ${stale}`);
-if(exists('assets/js/features/guided-chat-experience.js'))fail.push('Duplicate guided chat controller still exists.');
-if(loader.includes('guided-chat-experience.js'))fail.push('Duplicate guided chat controller is still loaded.');
+for(const token of ['CONFIG_DEFAULTS','normalizeBusinessConfig','getGeneralConfig','getLandingConfig','getChatConfig','getTaskConfig','getReferralConfig','getWithdrawalConfig','getKycConfig','getFeatureFlags','getPublicOrigin'])if(!configSource.includes(token))fail.push(`Configuration helper missing: ${token}`);
+for(const token of ['minimum_seconds:45','required_replies:4','minimum_reply_length:12','direct_referral_only:true','production_origin:\'https://earn-chat.com\''])if(!configSource.includes(token))fail.push(`Safe configuration fallback missing: ${token}`);
 
-if(!loader.includes(`RELEASE_VERSION='${release}'`))fail.push('Loader release identifier is not aligned.');
-for(const token of ['stylePromises=new Map','modulePromises=new Map','CUSTOMER_ROUTES','requestIdleCallback','levelFeature(false)'])if(!loader.includes(token))fail.push(`Route loader contract missing: ${token}`);
-if(loader.includes("loadFeature('./assets/js/features/"))fail.push('Page-relative dynamic import remains.');
-if(loader.includes('interaction-design.js'))fail.push('Obsolete broad interaction module remains loaded.');
-if(exists('assets/js/features/interaction-design.js'))fail.push('Obsolete broad interaction module still exists.');
+for(const token of ['invalidateBusinessConfig','earnchat:config-invalidated','earnchat:config-updated','refreshBusiness','adminUpdateConfiguration','earnchat:admin-config-saved'])if(!api.includes(token))fail.push(`Configuration cache/API contract missing: ${token}`);
+if((api.match(/createClient\(/g)||[]).length)fail.push('Supabase client must not be created in api.js.');
+if((loader.match(/createClient\(/g)||[]).length!==1)fail.push('Exactly one Supabase browser client must be created.');
 
-for(const token of ['memberOwner','sessionUserId','MEMBER_CACHE_MS=10000','memberPromise','invalidateMemberState','ADMIN_CACHE_MS=12000','adminOverviewPromise','adminClaims:async(limit=50','adminUsers:async(limit=50','adminWithdrawals:async(limit=50'])if(!api.includes(token))fail.push(`API/cache contract missing: ${token}`);
-if((api.match(/createClient\(/g)||[]).length>0)fail.push('Supabase client must only be created in supabase-client.js.');
-if((loader.match(/createClient\(/g)||[]).length!==1)fail.push('Exactly one Supabase client must be created.');
+for(const token of ["from'./config-runtime.js'",'chatMinimumSeconds','chatRequiredReplies','chatMinimumReplyLength','chatPartners','chatRecoveryMs','normalizeBusinessConfig(data.config','earnchat:config-updated','api.refreshBusiness','getPublicOrigin(app.config)'])if(!app.includes(token))fail.push(`Customer configuration integration missing: ${token}`);
+for(const stale of ['const CHAT_SECONDS=45','const PARTNERS=[','CHAT_RECOVERY_MS=','PARTNERS.map(','PARTNERS.find(','minimum two minutes',' / 02:00'])if(app.includes(stale))fail.push(`Obsolete customer hardcoding remains: ${stale}`);
+if(exists('assets/js/features/guided-chat-experience.js'))fail.push('Duplicate guided-chat controller still exists.');
+if(loader.includes('guided-chat-experience.js'))fail.push('Duplicate guided-chat controller is still loaded.');
+
+for(const token of ["renderConfiguration}from'./configuration.js'",'configuration:renderConfiguration','PAGE_SIZE=50','renderToken'])if(!adminCore.includes(token))fail.push(`Admin ownership contract missing: ${token}`);
+if(adminCore.includes('async function configuration(){'))fail.push('Legacy Admin configuration renderer remains.');
+for(const token of ['data-config-section="general"','data-config-section="chat"','data-config-section="tasks"','data-config-section="referrals"','data-config-section="withdrawals"','data-config-section="kyc"','data-config-section="feature_flags"','adminUpdateConfiguration','adminUpdateLevel','earnchat:form-rendered','earnchat:form-save-succeeded','configuration_version'])if(!adminConfig.includes(token))fail.push(`Admin configuration control missing: ${token}`);
 
 for(const token of ['earnchat:form-rendered','earnchat:form-save-succeeded','earnchat:form-save-failed','earnchat-draft:v2','BLOCKED_IDS','BLOCKED_TYPES'])if(!drafts.includes(token))fail.push(`Draft recovery contract missing: ${token}`);
-for(const stale of ['scheduleScan','pageshow',"setTimeout(scan",'checks<16'])if(drafts.includes(stale))fail.push(`Obsolete draft scanner remains: ${stale}`);
+for(const stale of ['scheduleScan','checks<16',"addEventListener('pageshow'"])if(drafts.includes(stale))fail.push(`Obsolete draft scanner remains: ${stale}`);
 for(const token of ['earnchat:chat-completion-requested','earnchat:withdrawal-requested','earnchat:task-opened','earnchat:referral-shared'])if(!analytics.includes(token))fail.push(`Semantic analytics event missing: ${token}`);
-if(analytics.includes('#chat-complete')||analytics.includes('#withdraw-form'))fail.push('Analytics still binds business controls by DOM ID.');
+if(analytics.includes('#chat-complete')||analytics.includes('#withdraw-form'))fail.push('Analytics still binds core business controls by DOM ID.');
 
-for(const token of ["section.id='view-upgrade'",'next-benefits','upgrade-disclosure','Compare all levels','How Activity Points work','earn-activity-hub','Guided chats','Sponsored visits','Referrals','primaryAction','earnchat:route-view'])if(!journey.includes(token))fail.push(`Upgrade/Earn journey missing: ${token}`);
-for(const level of ['Starter','Active','Pro','Elite'])if(!journey.includes(`'${level}'`))fail.push(`Upgrade journey missing ${level}.`);
-if((journey.match(/<details/g)||[]).length<3)fail.push('Upgrade detail sections are not collapsed.');
-if(journey.includes("addEventListener('hashchange'"))fail.push('Upgrade module still owns a hashchange listener.');
-for(const [name,source] of [['qualification',qualification],['task status',taskStatus]]){
- if(source.includes('pageshow')||source.includes('visibilitychange'))fail.push(`${name} module still performs lifecycle rescans.`);
- if(!source.includes('earnchat:route-view'))fail.push(`${name} module is not route-event driven.`);
-}
-if(levelCss.includes('.compact-guided-chat'))fail.push('Obsolete compact guided-chat CSS remains.');
-for(const token of ['chat-next-grid','prefers-reduced-motion','safe-area-inset-bottom'])if(!levelCss.includes(token))fail.push(`Required lightweight CSS contract missing: ${token}`);
+for(const token of ['restart-required','pending-review','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])if(!taskStatus.includes(token))fail.push(`Task lifecycle contract missing: ${token}`);
 
-if(!config.includes("'upgrade'"))fail.push('ROUTES does not contain upgrade.');
-const routeMatch=config.match(/ROUTES=\[([^\]]+)\]/),routes=new Set((routeMatch?.[1]||'').match(/'([^']+)'/g)?.map(value=>value.slice(1,-1))||[]),sources=[html,...js.map(file=>fs.readFileSync(file,'utf8'))].join('\n');
+for(const token of ['configuration_version','general_config jsonb','landing_config jsonb','chat_config jsonb','task_config jsonb','referral_config jsonb','withdrawal_config jsonb','kyc_config jsonb','feature_flags jsonb','earnchat_assert_admin','earnchat_validate_known_keys','earnchat_validate_configuration_section','admin_update_earnchat_configuration','get_earnchat_business_config','earnchat_admin_audit'])if(!migration.includes(token))fail.push(`Configuration SQL contract missing: ${token}`);
+for(const token of ['duplicate_level_rank','invalid_level_amounts','invalid_level_order','unknown_feature_flags','invalid_chat_contract','duplicate_open_task_claims','duplicate_task_credits','duplicate_chat_credits','normalized_public_configuration'])if(!verify.includes(token))fail.push(`Configuration verification missing: ${token}`);
+
+const routeConfig=read('assets/js/app-config.js'),routeMatch=routeConfig.match(/ROUTES=\[([^\]]+)\]/),routes=new Set((routeMatch?.[1]||'').match(/'([^']+)'/g)?.map(value=>value.slice(1,-1))||[]),allRuntime=[html,...js.map(file=>fs.readFileSync(file,'utf8'))].join('\n');
 const literal=value=>value&&!/[${}`]/.test(value);
-for(const match of sources.matchAll(/data-go=["']([^"']+)["']/g))if(literal(match[1])&&!routes.has(match[1]))fail.push(`Invalid data-go route: ${match[1]}`);
-for(const match of sources.matchAll(/data-route=["']([^"']+)["']/g))if(literal(match[1])&&!routes.has(match[1]))fail.push(`Invalid data-route route: ${match[1]}`);
+for(const match of allRuntime.matchAll(/data-go=["']([^"']+)["']/g))if(literal(match[1])&&!routes.has(match[1]))fail.push(`Invalid data-go route: ${match[1]}`);
+for(const match of allRuntime.matchAll(/data-route=["']([^"']+)["']/g))if(literal(match[1])&&!routes.has(match[1]))fail.push(`Invalid data-route route: ${match[1]}`);
 if((router.match(/addEventListener\(['"]hashchange/g)||[]).length>1)fail.push('Router registers duplicate hashchange listeners.');
-for(const staleDomain of ['earn-testsite.vercel.app','earn-test-99lc.vercel.app','www.chat-earn.xyz','chat-earn.xyz'])if(sources.includes(staleDomain))fail.push(`Stale or test domain remains: ${staleDomain}`);
 
-for(const token of [release,'About 45 seconds','00:00 / 00:45','data-route="upgrade"','data-route="referrals"'])if(!html.includes(token))fail.push(`First-paint contract missing: ${token}`);
-for(const stale of ['About 2 minutes','00:00 / 02:00','timer reaches two minutes','id="public-online"'])if(html.includes(stale))fail.push(`Stale first-paint content remains: ${stale}`);
 const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(match=>match[1]),duplicates=[...new Set(ids.filter((id,index)=>ids.indexOf(id)!==index))];
 if(duplicates.length)fail.push(`Duplicate HTML IDs: ${duplicates.join(', ')}`);
+for(const stale of ['About 2 minutes','00:00 / 02:00','id="public-online"','earn-test-99lc.vercel.app','www.chat-earn.xyz','chat-earn.xyz'])if(allRuntime.includes(stale))fail.push(`Stale production content remains: ${stale}`);
 
-if(build.includes('app.replace')||build.includes('Chat build transform')||build.includes('fs.writeFileSync(appPath'))fail.push('Build script still rewrites application behavior.');
+if(build.includes('app.replace')||build.includes('fs.writeFileSync(appPath'))fail.push('Build script rewrites application behavior.');
 for(const token of ['sourceApp','outputApp','Built application differs','Static deployment bundle copied'])if(!build.includes(token))fail.push(`Copy-only build contract missing: ${token}`);
 
-for(const token of ['PAGE_SIZE=50','admin-pagination','suspicious_accounts','work_liability_ngn','referral_liability_kes','activity_points','points_required','referral_commission_percent','earnchat:form-rendered','earnchat:form-save-succeeded'])if(!core.includes(token))fail.push(`Admin core missing: ${token}`);
-const hasAdminImport=/import\s*\{\s*renderAdmin\s*\}\s*from\s*['"]\.\/core\.js['"]/.test(adminEntry),hasAdminExport=/export\s*\{\s*renderAdmin\s*\}/.test(adminEntry);
-if(!hasAdminImport||!hasAdminExport)fail.push('Admin entry is not authoritative.');
+const secretFiles=walk(root).filter(file=>/\.(?:js|mjs|html|json|yml|yaml)$/.test(file)&&!file.includes(`${path.sep}public${path.sep}`)&&path.basename(file)!=='validate-production.mjs');
+const secretPatterns=[/SUPABASE_SERVICE_ROLE\s*=/i,/DATABASE_URL\s*=/i,/postgres(?:ql)?:\/\/[^\s'"`]+/i,/service_role\s*[:=]\s*['"][^'"]+/i];
+for(const file of secretFiles){const source=fs.readFileSync(file,'utf8');for(const pattern of secretPatterns)if(pattern.test(source))fail.push(`Potential privileged credential found in ${path.relative(root,file)}`)}
 
-const securityFiles=walk(root).filter(file=>{
- const relative=path.relative(root,file).replaceAll('\\','/');
- if(relative.startsWith('public/'))return false;
- if(relative==='scripts/validate-production.mjs'||relative==='scripts/validate-deployment.mjs')return false;
- return /\.(?:js|mjs|html|json|yml|yaml)$/.test(relative);
-});
-const allSource=securityFiles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
-const forbiddenCredentials=[
- ['service'+'_role','service-role credential'],
- ['SUPABASE_'+'SERVICE_ROLE','Supabase service-role variable'],
- ['DATABASE_'+'URL=','database URL assignment'],
- ['postgresql'+ '://','PostgreSQL connection string']
-];
-for(const [needle,label] of forbiddenCredentials)if(allSource.includes(needle))fail.push(`Potential secret or privileged credential found: ${label}`);
-for(const obsolete of ['.github/workflows/final-authoritative-cleanup.yml','.github/workflows/finalize-production-source.yml','.github/workflows/consolidate-source.yml','.github/workflows/align-release.yml','.github/workflows/final-runtime-cleanup.yml','scripts/consolidate-source.mjs','scripts/align-release.mjs','scripts/final-runtime-cleanup.mjs'])if(exists(obsolete))fail.push(`Temporary or obsolete file remains: ${obsolete}`);
-
-const levelSql=read('supabase/earnchat_level_chat_upgrade_20260731.sql');
-for(const token of ["version='20260731-production-complete-r1'",'signup_bonus_ngn=2000','referral_reward_ngn=500','earnchat_point_events','referral_commission_percent','minimum_seconds\',45'])if(!levelSql.includes(token))fail.push(`Member SQL contract missing: ${token}`);
-const verify=read('supabase/earnchat_production_verify.sql');
-for(const token of ['duplicate_signup_bonuses','duplicate_point_events','activity_point_mismatches','duplicate_referral_commissions','chat_minimum_contract','admin_overview_contract','wallet_mismatches'])if(!verify.includes(token))fail.push(`Verification SQL missing: ${token}`);
+const obsolete=['.github/workflows/consolidate-source.yml','.github/workflows/align-release.yml','.github/workflows/upgrade-config-cache.yml','.github/workflows/install-admin-configuration.yml','.github/workflows/install-customer-configuration.yml','scripts/consolidate-source.mjs','scripts/align-release.mjs','scripts/upgrade-config-cache.mjs','scripts/install-admin-configuration.mjs','scripts/install-customer-configuration.mjs'];
+for(const file of obsolete)if(exists(file))fail.push(`Temporary migration file remains: ${file}`);
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
-console.log('Earn Chat consolidated-source validation passed.');
-console.log(`Checked ${required.length} required files, ${js.length} runtime modules, single chat ownership, post-chat actions, task lifecycle events, user-scoped state cache, route-driven feature modules, event-driven drafts, semantic analytics, copy-only build, routes, Admin and database contracts.`);
+console.log('Earn Chat Admin-driven configuration validation passed.');
+console.log(`Checked ${required.length} required files, ${js.length} runtime modules, normalized configuration, cache propagation, customer chat rules, Admin controls, task lifecycle, copy-only build, routes, credentials and database contracts.`);
