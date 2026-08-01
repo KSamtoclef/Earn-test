@@ -5,3 +5,4 @@ const replace=(from,to,label)=>{if(!source.includes(from))throw new Error(`Missi
 replace("'featureForm','levelForm'","'flagsForm','levelsForm'",'Admin configuration function names');
 replace("['restart-required','pending-review','approved','rejected'","['task-incomplete','task-pending','approved','rejected'",'task lifecycle class names');
 fs.writeFileSync(path,source);
+// Triggered after workflow creation.
