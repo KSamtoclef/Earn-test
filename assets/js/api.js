@@ -5,9 +5,10 @@ const rpc=(name,args={})=>sb.rpc(name,args).then(unwrap);
 const select=(table,columns='*')=>sb.from(table).select(columns);
 const maskAccount=value=>{const raw=String(value||'').replace(/\s+/g,'');if(!raw)return'';return`${'•'.repeat(Math.max(4,Math.min(8,raw.length-4)))}${raw.slice(-4)}`};
 const maskWithdrawal=row=>({...row,payout_snapshot:{account_name:row.payout_snapshot?.account_name||'',provider:row.payout_snapshot?.provider||'',account_number:maskAccount(row.payout_snapshot?.account_number)}});
-const MEMBER_CACHE_MS=10000,CONFIG_CACHE_MS=60000,ADMIN_CACHE_MS=12000;
+const MEMBER_CACHE_MS=10000,CONFIG_CACHE_MS=300000,ADMIN_CACHE_MS=12000,CONFIG_STORAGE_KEY='earnchat-business-config:v1';
 let memberCache=null,memberAt=0,memberPromise=null,memberOwner=null;
 let configCache=null,configAt=0,configPromise=null;
+try{const saved=JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY)||'null');if(saved?.data){configCache=saved.data;configAt=Number(saved.savedAt||0)}}catch{}
 let adminOverviewCache=null,adminOverviewAt=0,adminOverviewPromise=null;
 
 async function sessionUserId(){
@@ -20,9 +21,14 @@ export function invalidateMemberState(){
   window.dispatchEvent(new CustomEvent('earnchat:member-state-invalidated'));
 }
 export function invalidateAdminOverview(){adminOverviewCache=null;adminOverviewAt=0;adminOverviewPromise=null}
-export function invalidateBusinessConfig(section='all'){
+export function invalidateBusinessConfig(section='all',notify=true){
   configCache=null;configAt=0;configPromise=null;
-  window.dispatchEvent(new CustomEvent('earnchat:config-invalidated',{detail:{section}}));
+  if(notify)window.dispatchEvent(new CustomEvent('earnchat:config-invalidated',{detail:{section}}));
+}
+function storeBusinessConfig(data){
+  configCache=data;configAt=Date.now();
+  try{localStorage.setItem(CONFIG_STORAGE_KEY,JSON.stringify({savedAt:configAt,data}))}catch{}
+  return data;
 }
 async function memberState(force=false){
   const owner=await sessionUserId();
@@ -43,11 +49,7 @@ async function memberState(force=false){
 async function businessConfig(force=false){
   if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS)return configCache;
   if(configPromise)return configPromise;
-  const request=rpc('get_earnchat_business_config').then(data=>{
-    configCache=data;configAt=Date.now();
-    window.dispatchEvent(new CustomEvent('earnchat:config-updated',{detail:{version:data?.version||data?.settings?.version||null,section:'all',config:data,updated_at:data?.updated_at||data?.settings?.updated_at||null}}));
-    return data;
-  });
+  const request=rpc('get_earnchat_business_config').then(storeBusinessConfig);
   configPromise=request;
   try{return await request}finally{if(configPromise===request)configPromise=null}
 }
@@ -62,10 +64,15 @@ async function mutateMember(name,args={}){const data=await rpc(name,args);invali
 async function mutateAdmin(name,args={},options={}){
   const data=await rpc(name,args);
   invalidateAdminOverview();
-  if(options.config)invalidateBusinessConfig(options.section||'all');
+  let result=data;
+  if(options.config){
+    invalidateBusinessConfig(options.section||'all',false);
+    result=await businessConfig(true);
+    window.dispatchEvent(new CustomEvent('earnchat:config-updated',{detail:{version:result?.configuration_version||result?.version||null,section:options.section||'all',config:result,updated_at:result?.updated_at||result?.settings?.updated_at||null}}));
+  }
   if(options.member)invalidateMemberState();
-  if(options.event)window.dispatchEvent(new CustomEvent(options.event,{detail:{data,section:options.section||null}}));
-  return data;
+  if(options.event)window.dispatchEvent(new CustomEvent(options.event,{detail:{data:result,section:options.section||null}}));
+  return result;
 }
 
 
