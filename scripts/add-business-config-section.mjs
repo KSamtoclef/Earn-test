@@ -35,3 +35,4 @@ update('assets/js/app.js',source=>{
  source=source.replace(signupCopy,"Currency: ${c.currency} · Welcome bonus: ${signup} · Starter chat: ${reward}<br>Main payout:");
  return source;
 });
+
