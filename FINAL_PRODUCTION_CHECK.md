@@ -1,7 +1,7 @@
 # Earn Chat final production check
 
-Commit: 77b7d233d6c79f9eb46739521e135bd56e94cbf8
-Validation exit: 1
+Commit: 576e725640b0d9475e8582770533f8598dfd3709
+Validation exit: 0
 Build exit: 1
 
 ## Validation output
@@ -10,12 +10,9 @@ Build exit: 1
 > validate
 > node scripts/validate-production.mjs && node scripts/validate-deployment.mjs
 
-Production validation failed with 5 issue(s):
-- Admin configuration control missing: featureForm
-- Admin configuration control missing: levelForm
-- Task lifecycle contract missing: restart-required
-- Task lifecycle contract missing: pending-review
-- Production SQL run order missing: earnchat_task_restart_contract_20260801.sql
+Earn Chat structural production validation passed.
+Checked 33 required files and 18 JavaScript modules across configuration, customer runtime, Admin, chat, task restart, withdrawals, KYC, security, routing and copy-only deployment.
+Earn Chat deployment configuration validation passed.
 ```
 
 ## Build output
@@ -28,10 +25,18 @@ Production validation failed with 5 issue(s):
 > validate
 > node scripts/validate-production.mjs && node scripts/validate-deployment.mjs
 
-Production validation failed with 5 issue(s):
-- Admin configuration control missing: featureForm
-- Admin configuration control missing: levelForm
-- Task lifecycle contract missing: restart-required
-- Task lifecycle contract missing: pending-review
-- Production SQL run order missing: earnchat_task_restart_contract_20260801.sql
+Earn Chat structural production validation passed.
+Checked 33 required files and 18 JavaScript modules across configuration, customer runtime, Admin, chat, task restart, withdrawals, KYC, security, routing and copy-only deployment.
+Earn Chat deployment configuration validation passed.
+file:///home/runner/work/Earn-test/Earn-test/scripts/build-static.mjs:25
+  if(!sourceApp.includes(token))throw new Error(`Application source is missing required contract: ${token}`);
+                                      ^
+
+Error: Application source is missing required contract: CHAT_SECONDS=45
+    at file:///home/runner/work/Earn-test/Earn-test/scripts/build-static.mjs:25:39
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.1
 ```
