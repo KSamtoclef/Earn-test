@@ -7,3 +7,5 @@ for(const path of['index.html','assets/js/app.js','assets/js/supabase-client.js'
   if(!source.includes(previous))throw new Error(`${path} is missing ${previous}`);
   fs.writeFileSync(path,source.replaceAll(previous,next));
 }
+
+// Triggered after the release workflow was installed.
