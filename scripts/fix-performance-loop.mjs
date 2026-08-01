@@ -40,3 +40,5 @@ patch('assets/js/app.js',[
   "window.addEventListener('earnchat:config-invalidated',async()=>{try{app.config=normalizeBusinessConfig(await api.refreshBusiness())}catch{return}const route=document.body.dataset.route||'landing';if(route==='admin')return;Promise.resolve(onRoute(route)).catch(error=>console.error('Configuration refresh failed:',error))});",
   'admin-safe invalidation refresh']
 ]);
+
+// Triggered after the workflow was installed.
