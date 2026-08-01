@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - .github/workflows/final-clean-gate.yml
+      - scripts/validate-deployment.mjs
 permissions:
   contents: write
 jobs:
