@@ -1,0 +1,15 @@
+file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:4
+function mustReplace(source,from,to,label){if(!source.includes(from))throw new Error(`Missing ${label}`);return source.replace(from,to)}
+                                                                           ^
+
+Error: Missing throttled session verification
+    at mustReplace (file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:4:76)
+    at file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:64:9
+    at edit (file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:3:78)
+    at file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:57:1
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.1
+migration_exit=1
