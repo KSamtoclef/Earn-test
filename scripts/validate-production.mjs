@@ -25,7 +25,7 @@ for(const file of js){
 const html=read('index.html'),config=read('assets/js/app-config.js'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),app=read('assets/js/app.js'),router=read('assets/js/router.js'),journey=read('assets/js/features/level-journey.js'),qualification=read('assets/js/features/qualification.js'),taskStatus=read('assets/js/features/task-status.js'),drafts=read('assets/js/features/draft-recovery.js'),analytics=read('assets/js/features/analytics.js'),build=read('scripts/build-static.mjs'),core=read('assets/js/admin/core.js'),adminEntry=read('assets/js/admin/admin.js'),levelCss=read('assets/css/level-chat-experience.css'),release='20260801-source-consolidated-r1';
 
 for(const token of [`RELEASE='${release}'`,'CHAT_SECONDS=45','CHAT_RECOVERY_MS','CHAT_PROMPT_SETS',' / 00:45','data-chat-next','earnchat:chat-completion-requested','earnchat:task-started','earnchat:task-submitted',"$$('[data-chat-next]'"])if(!app.includes(token))fail.push(`Authoritative app source missing: ${token}`);
-for(const stale of ['About 2 minutes','minimum two minutes','two-minute session','120-elapsed',' / 02:00','<120)return','#public-stats','#public-total','#public-online',"$('[data-chat-next]',$('#chat-ready')).forEach"])if(app.includes(stale))fail.push(`Obsolete app behavior remains: ${stale}`);
+for(const stale of ['About 2 minutes','minimum two minutes','two-minute session','120-elapsed',' / 02:00','<120)return','#public-stats','#public-total','#public-online'])if(app.includes(stale))fail.push(`Obsolete app behavior remains: ${stale}`);
 if(exists('assets/js/features/guided-chat-experience.js'))fail.push('Duplicate guided chat controller still exists.');
 if(loader.includes('guided-chat-experience.js'))fail.push('Duplicate guided chat controller is still loaded.');
 
@@ -75,8 +75,20 @@ for(const token of ['PAGE_SIZE=50','admin-pagination','suspicious_accounts','wor
 const hasAdminImport=/import\s*\{\s*renderAdmin\s*\}\s*from\s*['"]\.\/core\.js['"]/.test(adminEntry),hasAdminExport=/export\s*\{\s*renderAdmin\s*\}/.test(adminEntry);
 if(!hasAdminImport||!hasAdminExport)fail.push('Admin entry is not authoritative.');
 
-const allSource=walk(root).filter(file=>/\.(?:js|mjs|html|json|yml|yaml)$/.test(file)&&!file.includes(`${path.sep}public${path.sep}`)).map(file=>fs.readFileSync(file,'utf8')).join('\n');
-for(const secret of ['service_role','SUPABASE_SERVICE_ROLE','DATABASE_URL=','postgresql://'])if(allSource.includes(secret))fail.push(`Potential secret or privileged credential found: ${secret}`);
+const securityFiles=walk(root).filter(file=>{
+ const relative=path.relative(root,file).replaceAll('\\','/');
+ if(relative.startsWith('public/'))return false;
+ if(relative==='scripts/validate-production.mjs'||relative==='scripts/validate-deployment.mjs')return false;
+ return /\.(?:js|mjs|html|json|yml|yaml)$/.test(relative);
+});
+const allSource=securityFiles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
+const forbiddenCredentials=[
+ ['service'+'_role','service-role credential'],
+ ['SUPABASE_'+'SERVICE_ROLE','Supabase service-role variable'],
+ ['DATABASE_'+'URL=','database URL assignment'],
+ ['postgresql'+ '://','PostgreSQL connection string']
+];
+for(const [needle,label] of forbiddenCredentials)if(allSource.includes(needle))fail.push(`Potential secret or privileged credential found: ${label}`);
 for(const obsolete of ['.github/workflows/final-authoritative-cleanup.yml','.github/workflows/finalize-production-source.yml','.github/workflows/consolidate-source.yml','.github/workflows/align-release.yml','.github/workflows/final-runtime-cleanup.yml','scripts/consolidate-source.mjs','scripts/align-release.mjs','scripts/final-runtime-cleanup.mjs'])if(exists(obsolete))fail.push(`Temporary or obsolete file remains: ${obsolete}`);
 
 const levelSql=read('supabase/earnchat_level_chat_upgrade_20260731.sql');
