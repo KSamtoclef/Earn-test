@@ -1,26 +1,41 @@
 import{SUPABASE_URL,SUPABASE_ANON_KEY}from'./app-config.js';
 
-export const RELEASE_VERSION='20260731-launch-lite-r3';
-const loadedStyles=new Map(),loadedFeatures=new Map();
+export const RELEASE_VERSION='20260801-source-consolidated-r1';
+const stylePromises=new Map(),modulePromises=new Map();
 
 function loadStyle(href,key){
- if(loadedStyles.has(key))return loadedStyles.get(key);
- const ready=new Promise(resolve=>{
-  const existing=document.querySelector(`link[data-style="${key}"]`);
-  if(existing){if(existing.sheet)return resolve(existing);const done=()=>resolve(existing);existing.addEventListener('load',done,{once:true});existing.addEventListener('error',done,{once:true});setTimeout(done,1200);return}
-  const link=document.createElement('link');
-  const done=()=>resolve(link);
-  link.rel='stylesheet';link.href=`${href}?v=${RELEASE_VERSION}`;link.dataset.style=key;
-  link.addEventListener('load',done,{once:true});
-  link.addEventListener('error',()=>{console.error(`Earn Chat stylesheet failed: ${key}`);done()},{once:true});
-  document.head.appendChild(link);setTimeout(done,1200);
- });
- loadedStyles.set(key,ready);return ready;
+  if(stylePromises.has(key))return stylePromises.get(key);
+  const promise=new Promise(resolve=>{
+    const existing=document.querySelector(`link[data-style="${key}"]`);
+    if(existing){
+      if(existing.sheet)return resolve(existing);
+      const done=()=>resolve(existing);
+      existing.addEventListener('load',done,{once:true});
+      existing.addEventListener('error',done,{once:true});
+      setTimeout(done,1200);
+      return;
+    }
+    const link=document.createElement('link');
+    const done=()=>resolve(link);
+    link.rel='stylesheet';link.href=`${href}?v=${RELEASE_VERSION}`;link.dataset.style=key;
+    link.addEventListener('load',done,{once:true});
+    link.addEventListener('error',()=>{console.warn(`Earn Chat stylesheet failed: ${key}`);done()},{once:true});
+    document.head.appendChild(link);
+    setTimeout(done,1200);
+  });
+  stylePromises.set(key,promise);
+  return promise;
 }
-function loadFeature(src,key,style=null){
- if(loadedFeatures.has(key))return loadedFeatures.get(key);
- const promise=(style||Promise.resolve()).then(()=>import(`${src}?v=${RELEASE_VERSION}`)).catch(error=>{console.error(`Earn Chat feature failed: ${key}`,error);loadedFeatures.delete(key);throw error});
- loadedFeatures.set(key,promise);return promise;
+function loadFeature(src,key,stylePromise=null,{critical=false}={}){
+  if(modulePromises.has(key))return modulePromises.get(key);
+  const promise=(stylePromise||Promise.resolve()).then(()=>import(`${src}?v=${RELEASE_VERSION}`)).catch(error=>{
+    modulePromises.delete(key);
+    if(critical)throw error;
+    console.warn(`Earn Chat optional feature failed: ${key}`,error);
+    return null;
+  });
+  modulePromises.set(key,promise);
+  return promise;
 }
 loadStyle('./assets/css/routes.css','routes').catch(()=>{});
 
@@ -35,17 +50,15 @@ ensureSdk().then(sdk=>{sb=sdk.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:
 const idle=(callback,timeout=1800)=>window.requestIdleCallback?requestIdleCallback(callback,{timeout}):setTimeout(callback,350);
 const routeName=()=>location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
 const CUSTOMER_ROUTES=new Set(['home','earn','chat','upgrade','tasks','visits','referrals','withdraw','profile']);
-function levelFeature(immediate=false){const style=loadStyle('./assets/css/level-chat-experience.css','level-chat-experience');const run=()=>loadFeature('./features/level-journey.js','level-journey',style);immediate?run():idle(run,900)}
+function levelFeature(immediate=false){const style=loadStyle('./assets/css/level-chat-experience.css','level-chat-experience');const run=()=>loadFeature('./features/level-journey.js','level-journey',style,{critical:true});immediate?run():idle(run,900)}
 function loadRouteFeatures(){
- const route=routeName();
- if(route==='upgrade')levelFeature(true);else if(CUSTOMER_ROUTES.has(route))levelFeature(false);
- if(['home','earn','chat'].includes(route))loadFeature('./features/guided-chat-experience.js','guided-chat-experience');
- if(['landing','register','home','referrals'].includes(route)){const style=loadStyle('./assets/css/member-motivation.css','member-motivation');loadFeature('./features/member-motivation.js','member-motivation',style)}
- if(['home','referrals'].includes(route)){const style=loadStyle('./assets/css/referral-priority.css','referral-priority');idle(()=>loadFeature('./features/referral-priority.js','referral-priority',style),1200)}
- if(route==='profile')loadFeature('./features/qualification.js','qualification');
- if(route==='tasks'||route==='visits')loadFeature('./features/task-status.js','task-status');
- if(['register','tasks','visits','profile','admin'].includes(route))idle(()=>loadFeature('./features/draft-recovery.js','draft-recovery'),1200);
- if(route==='admin')return;
+  const route=routeName();
+  if(route==='upgrade')levelFeature(true);else if(CUSTOMER_ROUTES.has(route))levelFeature(false);
+  if(['landing','register','home','referrals'].includes(route)){const style=loadStyle('./assets/css/member-motivation.css','member-motivation');loadFeature('./features/member-motivation.js','member-motivation',style)}
+  if(['home','referrals'].includes(route)){const style=loadStyle('./assets/css/referral-priority.css','referral-priority');idle(()=>loadFeature('./features/referral-priority.js','referral-priority',style),1200)}
+  if(route==='profile')loadFeature('./features/qualification.js','qualification');
+  if(route==='tasks'||route==='visits')loadFeature('./features/task-status.js','task-status');
+  if(['register','tasks','visits','profile','admin'].includes(route))idle(()=>loadFeature('./features/draft-recovery.js','draft-recovery'),1200);
 }
 window.addEventListener('hashchange',loadRouteFeatures,{passive:true});
 loadRouteFeatures();
