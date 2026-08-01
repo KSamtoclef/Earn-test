@@ -10,14 +10,13 @@ Run these idempotent upgrades in this exact order:
 2. `earnchat_level_chat_upgrade_20260731.sql`
 3. `earnchat_configuration_control_upgrade_20260801.sql`
 4. `earnchat_dynamic_chat_contract_20260801.sql`
-5. `earnchat_task_restart_contract_20260801.sql`
-6. `earnchat_dynamic_operations_contract_20260801.sql`
-7. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
-8. `earnchat_production_verify.sql` — read-only production verification
+5. `earnchat_dynamic_operations_contract_20260801.sql`
+6. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
+7. `earnchat_production_verify.sql` — read-only production verification
 
 Optional paused starter tasks:
 
-9. `earnchat_starter_tasks_seed.sql`
+8. `earnchat_starter_tasks_seed.sql`
 
 The 2026-08-01 upgrades are required for the Admin-driven configuration and accurate activity lifecycle. They add:
 
@@ -31,13 +30,13 @@ The 2026-08-01 upgrades are required for the Admin-driven configuration and accu
 - dynamic attempt expiry;
 - dynamic guided-chat Activity Points;
 - one server/client guided-chat contract;
-- authoritative expiration of incomplete task attempts;
+- authoritative cancellation of incomplete task attempts;
 - restart-required task behavior without duplicate open claims;
 - server-enforced withdrawal availability and payout-method flags;
 - configurable maximum open withdrawal requests;
 - server-enforced KYC availability and reference requirements.
 
-Do not expose the new Admin configuration controls before steps 3 through 6 have succeeded. The customer runtime uses safe fallbacks, but configurable rules become authoritative only after the database functions are installed.
+Do not expose the new Admin configuration controls before steps 3 through 5 have succeeded. The customer runtime uses safe fallbacks, but configurable rules become authoritative only after the database functions are installed.
 
 The base production version remains:
 
@@ -61,7 +60,7 @@ Verification requirements:
 - every duplicate open task-claim count is `0`;
 - the public configuration contains no `updated_by` field;
 - guided-chat start, resume and completion return the configured contract;
-- incomplete task claims can be expired only by their owner or an authorized server action;
+- incomplete task claims can be cancelled only by their owner or an authorized server action;
 - restarting an incomplete task does not create duplicate credit;
 - disabled withdrawal methods are rejected by the server;
 - the configured maximum open withdrawal count is enforced;
@@ -84,10 +83,9 @@ Run:
 3. `earnchat_level_chat_upgrade_20260731.sql`
 4. `earnchat_configuration_control_upgrade_20260801.sql`
 5. `earnchat_dynamic_chat_contract_20260801.sql`
-6. `earnchat_task_restart_contract_20260801.sql`
-7. `earnchat_dynamic_operations_contract_20260801.sql`
-8. `earnchat_configuration_control_verify_20260801.sql`
-9. `earnchat_production_verify.sql`
+6. `earnchat_dynamic_operations_contract_20260801.sql`
+7. `earnchat_configuration_control_verify_20260801.sql`
+8. `earnchat_production_verify.sql`
 
 The installer creates the base production schema. The later upgrades apply KYC/recovery, bonuses, points, direct commissions, earned levels, versioned Admin configuration, the dynamic guided-chat contract, authoritative task restart, and server-enforced withdrawal/KYC settings.
 
