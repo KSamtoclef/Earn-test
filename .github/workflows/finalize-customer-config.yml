@@ -4,6 +4,7 @@ on:
     paths:
       - scripts/finalize-customer-config.mjs
       - scripts/finalize-api-config.mjs
+      - scripts/finalize-customer-config-cleanup.mjs
 permissions:
   contents: write
 jobs:
@@ -16,6 +17,7 @@ jobs:
           node-version: 22
       - run: node scripts/finalize-api-config.mjs
       - run: node scripts/finalize-customer-config.mjs
+      - run: node scripts/finalize-customer-config-cleanup.mjs
       - run: node --check assets/js/api.js
       - run: node --check assets/js/app.js
       - name: Commit aligned runtime
