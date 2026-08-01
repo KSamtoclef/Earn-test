@@ -20,6 +20,10 @@ export function invalidateMemberState(){
   window.dispatchEvent(new CustomEvent('earnchat:member-state-invalidated'));
 }
 export function invalidateAdminOverview(){adminOverviewCache=null;adminOverviewAt=0;adminOverviewPromise=null}
+export function invalidateBusinessConfig(section='all'){
+  configCache=null;configAt=0;configPromise=null;
+  window.dispatchEvent(new CustomEvent('earnchat:config-invalidated',{detail:{section}}));
+}
 async function memberState(force=false){
   const owner=await sessionUserId();
   if(!owner){invalidateMemberState();return null}
@@ -39,7 +43,11 @@ async function memberState(force=false){
 async function businessConfig(force=false){
   if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS)return configCache;
   if(configPromise)return configPromise;
-  const request=rpc('get_earnchat_business_config').then(data=>{configCache=data;configAt=Date.now();return data});
+  const request=rpc('get_earnchat_business_config').then(data=>{
+    configCache=data;configAt=Date.now();
+    window.dispatchEvent(new CustomEvent('earnchat:config-updated',{detail:{version:data?.version||data?.settings?.version||null,section:'all',config:data,updated_at:data?.updated_at||data?.settings?.updated_at||null}}));
+    return data;
+  });
   configPromise=request;
   try{return await request}finally{if(configPromise===request)configPromise=null}
 }
@@ -51,7 +59,14 @@ async function adminOverview(force=false){
   try{return await request}finally{if(adminOverviewPromise===request)adminOverviewPromise=null}
 }
 async function mutateMember(name,args={}){const data=await rpc(name,args);invalidateMemberState();return data}
-async function mutateAdmin(name,args={}){const data=await rpc(name,args);invalidateAdminOverview();return data}
+async function mutateAdmin(name,args={},options={}){
+  const data=await rpc(name,args);
+  invalidateAdminOverview();
+  if(options.config)invalidateBusinessConfig(options.section||'all');
+  if(options.member)invalidateMemberState();
+  if(options.event)window.dispatchEvent(new CustomEvent(options.event,{detail:{data,section:options.section||null}}));
+  return data;
+}
 
 
 export const api={
@@ -63,6 +78,8 @@ export const api={
  state:memberState,
  refreshState:()=>memberState(true),
  business:businessConfig,
+ refreshBusiness:()=>businessConfig(true),
+ invalidateBusiness:invalidateBusinessConfig,
  payments:async()=>unwrap(await select('earnchat_payment_activity','masked_name,country_code,amount,currency,payout_method,paid_at').eq('is_visible',true).eq('is_verified',true).order('paid_at',{ascending:false}).limit(2)),
  feedback:async()=>unwrap(await select('earnchat_member_feedback','quote,country_code').eq('is_visible',true).eq('verified_paid_member',true).order('created_at',{ascending:false}).limit(3)),
  tasks:async()=>rpc('list_earnchat_tasks'),
@@ -96,7 +113,7 @@ export const api={
  adminBulkReviewClaims:async(ids,decision,reason)=>mutateAdmin('admin_bulk_review_task_claims',{p_claims:ids,p_decision:decision,p_reason:reason||null}),
  adminKyc:async(limit=50,offset=0)=>unwrap(await select('earnchat_kyc_submissions').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminKycConfig:async()=>rpc('get_earnchat_kyc_config'),
- adminUpdateKycConfig:async payload=>mutateAdmin('admin_update_earnchat_kyc_config',{p_payload:payload}),
+ adminUpdateKycConfig:async payload=>mutateAdmin('admin_update_earnchat_kyc_config',{p_payload:payload},{config:true,member:true,section:'kyc',event:'earnchat:admin-config-saved'}),
  adminReviewKyc:async(id,decision,reason)=>mutateAdmin('admin_review_earnchat_kyc',{p_submission:id,p_decision:decision,p_reason:reason||null}),
  adminBulkReviewKyc:async(ids,decision,reason)=>mutateAdmin('admin_bulk_review_earnchat_kyc',{p_submissions:ids,p_decision:decision,p_reason:reason||null}),
  adminWithdrawals:async(limit=50,offset=0)=>(unwrap(await select('earnchat_withdrawals').order('created_at',{ascending:false}).range(offset,offset+limit-1))||[]).map(maskWithdrawal),
@@ -119,8 +136,8 @@ export const api={
  adminSaveFeedback:async(id,quote,country,verified,visible)=>mutateAdmin('admin_upsert_earnchat_feedback',{p_id:id||null,p_quote:quote,p_country:country,p_verified:!!verified,p_visible:!!visible}),
  adminAudit:async(limit=50,offset=0)=>unwrap(await select('earnchat_admin_audit').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminAnalytics:async(limit=50,offset=0)=>unwrap(await select('earnchat_analytics_events').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
- adminUpdateBusiness:async payload=>mutateAdmin('admin_update_earnchat_business_settings',{p_payload:payload}),
- adminUpdateLevel:async(level,payload)=>mutateAdmin('admin_update_earnchat_level',{p_level:level,p_payload:payload}),
+ adminUpdateBusiness:async payload=>mutateAdmin('admin_update_earnchat_business_settings',{p_payload:payload},{config:true,member:true,section:'business',event:'earnchat:admin-config-saved'}),
+ adminUpdateLevel:async(level,payload)=>mutateAdmin('admin_update_earnchat_level',{p_level:level,p_payload:payload},{config:true,member:true,section:'levels',event:'earnchat:admin-config-saved'}),
  presence:async payload=>rpc('upsert_earnchat_presence',payload),
  presenceInactive:async sessionId=>rpc('mark_earnchat_presence_inactive',{p_session_id:sessionId})
 };
