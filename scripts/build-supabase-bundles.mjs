@@ -21,4 +21,4 @@ const combine=(title,files)=>banner(title,files)+files.map((file,index)=>{
 
 fs.writeFileSync('supabase/EARNCHAT_RUN_1_APPLY_ALL_20260801.sql',combine('Earn Chat production upgrade bundle — RUN FIRST',applyFiles));
 fs.writeFileSync('supabase/EARNCHAT_RUN_2_VERIFY_ALL_20260801.sql',combine('Earn Chat production verification bundle — RUN SECOND',verifyFiles));
-// Triggered after workflow creation.
+// Regenerated after expanding the task-claim status constraint for expired restarts.
