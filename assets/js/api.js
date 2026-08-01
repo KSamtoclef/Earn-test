@@ -53,10 +53,6 @@ async function adminOverview(force=false){
 async function mutateMember(name,args={}){const data=await rpc(name,args);invalidateMemberState();return data}
 async function mutateAdmin(name,args={}){const data=await rpc(name,args);invalidateAdminOverview();return data}
 
-sb.auth.onAuthStateChange((_event,session)=>{
-  const owner=session?.user?.id||null;
-  if(owner!==memberOwner)invalidateMemberState();
-});
 
 export const api={
  session:async()=>unwrap(await sb.auth.getSession()),
@@ -67,7 +63,6 @@ export const api={
  state:memberState,
  refreshState:()=>memberState(true),
  business:businessConfig,
- publicStats:async()=>rpc('get_public_earnchat_stats'),
  payments:async()=>unwrap(await select('earnchat_payment_activity','masked_name,country_code,amount,currency,payout_method,paid_at').eq('is_visible',true).eq('is_verified',true).order('paid_at',{ascending:false}).limit(2)),
  feedback:async()=>unwrap(await select('earnchat_member_feedback','quote,country_code').eq('is_visible',true).eq('verified_paid_member',true).order('created_at',{ascending:false}).limit(3)),
  tasks:async()=>rpc('list_earnchat_tasks'),
