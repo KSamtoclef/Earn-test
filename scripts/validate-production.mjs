@@ -4,10 +4,10 @@ import{execFileSync}from'node:child_process';
 
 const root=process.cwd();
 const failures=[];
-const rel=file=>path.relative(root,file).replaceAll('\\','/');
 const file=name=>path.join(root,name);
 const exists=name=>fs.existsSync(file(name));
 const read=name=>fs.readFileSync(file(name),'utf8');
+const rel=name=>path.relative(root,name).replaceAll('\\','/');
 const walk=dir=>fs.existsSync(dir)?fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]):[];
 const requireFile=name=>{if(!exists(name))failures.push(`Missing required file: ${name}`)};
 const requireToken=(source,token,label)=>{if(!source.includes(token))failures.push(`${label}: ${token}`)};
@@ -21,7 +21,7 @@ const required=[
  'assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/admin/configuration.js',
  'assets/js/features/draft-recovery.js','assets/js/features/analytics.js','assets/js/features/task-status.js','assets/js/features/level-journey.js','assets/js/features/qualification.js',
  'supabase/earnchat_production_install.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql',
- 'supabase/earnchat_configuration_control_upgrade_20260801.sql','supabase/earnchat_dynamic_chat_contract_20260801.sql','supabase/earnchat_dynamic_operations_contract_20260801.sql',
+ 'supabase/earnchat_configuration_control_upgrade_20260801.sql','supabase/earnchat_dynamic_chat_contract_20260801.sql','supabase/earnchat_task_restart_contract_20260801.sql','supabase/earnchat_dynamic_operations_contract_20260801.sql',
  'supabase/earnchat_configuration_control_verify_20260801.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 required.forEach(requireFile);
@@ -52,6 +52,7 @@ const taskStatus=read('assets/js/features/task-status.js');
 const build=read('scripts/build-static.mjs');
 const configSql=read('supabase/earnchat_configuration_control_upgrade_20260801.sql');
 const chatSql=read('supabase/earnchat_dynamic_chat_contract_20260801.sql');
+const taskRestartSql=read('supabase/earnchat_task_restart_contract_20260801.sql');
 const operationsSql=read('supabase/earnchat_dynamic_operations_contract_20260801.sql');
 const verifySql=read('supabase/earnchat_configuration_control_verify_20260801.sql');
 const runOrder=read('supabase/PRODUCTION_RUN_ORDER.md');
@@ -63,9 +64,9 @@ if((loader.match(/createClient\(/g)||[]).length!==1)failures.push('Exactly one S
 if((api.match(/createClient\(/g)||[]).length!==0)failures.push('api.js must not create another Supabase client.');
 for(const token of ['modulePromises=new Map','loadFeature(','RELEASE_VERSION'])requireToken(loader,token,'Feature-loader contract missing');
 
-for(const token of ['invalidateBusinessConfig','refreshBusiness','earnchat:config-invalidated','earnchat:config-updated','adminUpdateConfiguration','earnchat:admin-config-saved','cancelTask'])requireToken(api,token,'API/cache contract missing');
-for(const token of ["from'./config-runtime.js'",'chatMinimumSeconds','chatRequiredReplies','chatMinimumReplyLength','chatRecoveryMs','chatPartners','landingConfig()','taskConfig()','referralConfig()','withdrawalConfig()','kycConfig()','featureFlags()','getPublicOrigin(app.config)','api.cancelTask','earnchat:config-updated'])requireToken(app,token,'Customer configuration integration missing');
-for(const token of ['const CHAT_SECONDS=45','const PARTNERS=[','CHAT_RECOVERY_MS=',' / 02:00','minimum two minutes'])forbidToken(app,token,'Obsolete customer rule remains');
+for(const token of ['invalidateBusinessConfig','refreshBusiness','earnchat:config-invalidated','earnchat:config-updated','adminUpdateConfiguration','earnchat:admin-config-saved','cancelTask','cancel_earnchat_task_claim'])requireToken(api,token,'API/cache contract missing');
+for(const token of ["from'./config-runtime.js'",'chatMinimumSeconds','chatRequiredReplies','chatMinimumReplyLength','chatRecoveryMs','chatPartners','landingConfig()','taskConfig()','referralConfig()','withdrawalConfig()','kycConfig()','featureFlags()','getPublicOrigin(app.config)','api.cancelTask','earnchat:config-updated','Activity not completed','Restart task','taskConfig().restart_required_message'])requireToken(app,token,'Customer configuration integration missing');
+for(const token of ['const CHAT_SECONDS=45','const PARTNERS=[','CHAT_RECOVERY_MS=',' / 02:00','minimum two minutes','Continue task</button>','resume-task'])forbidToken(app,token,'Obsolete customer rule remains');
 if(exists('assets/js/features/guided-chat-experience.js'))failures.push('Duplicate guided-chat controller exists.');
 
 for(const token of ['configureRouter','hashchange','routeHandler'])requireToken(router,token,'Router contract missing');
@@ -82,10 +83,12 @@ for(const token of ['#chat-complete','#withdraw-form'])forbidToken(analytics,tok
 for(const token of ['restart-required','pending-review','approved','rejected','earnchat:task-started','earnchat:task-submitted','earnchat:route-view'])requireToken(taskStatus,token,'Task lifecycle contract missing');
 
 for(const token of ['configuration_version','general_config jsonb','landing_config jsonb','chat_config jsonb','task_config jsonb','referral_config jsonb','withdrawal_config jsonb','kyc_config jsonb','feature_flags jsonb','earnchat_validate_configuration_section','admin_update_earnchat_configuration','get_earnchat_business_config','earnchat_admin_audit'])requireToken(configSql,token,'Configuration SQL contract missing');
-for(const token of ['earnchat_chat_contract','minimum_seconds','required_replies','minimum_reply_length','attempt_expiry_minutes','earnchat_reconcile_points','start_earnchat_chat','get_my_open_chat_attempt','complete_earnchat_chat'])requireToken(chatSql,token,'Dynamic chat SQL contract missing');
-for(const token of ['cancel_earnchat_task_claim',"status='cancelled'",'Restarted by member','request_earnchat_withdrawal','maximum_open_requests','bank_transfer_enabled','mpesa_enabled','submit_earnchat_kyc','reference_required','grant execute'])requireToken(operationsSql,token,'Dynamic operations SQL contract missing');
+for(const token of ['earnchat_chat_contract','minimum_seconds','required_replies','minimum_reply_length','attempt_expiry_minutes','activity_points','earnchat_reconcile_points','start_earnchat_chat','get_my_open_chat_attempt','complete_earnchat_chat'])requireToken(chatSql,token,'Dynamic chat SQL contract missing');
+for(const token of ['cancel_earnchat_task_claim',"status='expired'",'Restarted by member','grant execute'])requireToken(taskRestartSql,token,'Task restart SQL contract missing');
+for(const token of ['request_earnchat_withdrawal','withdrawal_config','maximum_open_requests','bank_transfer_enabled','mpesa_enabled','submit_earnchat_kyc','kyc_config','reference_required','grant execute'])requireToken(operationsSql,token,'Dynamic operations SQL contract missing');
+forbidToken(operationsSql,'create or replace function public.cancel_earnchat_task_claim','Task cancellation is duplicated in operations SQL');
 for(const token of ['duplicate_level_rank','invalid_level_amounts','invalid_level_order','unknown_feature_flags','invalid_chat_contract','duplicate_open_task_claims','duplicate_task_credits','duplicate_chat_credits','normalized_public_configuration'])requireToken(verifySql,token,'Configuration verification missing');
-for(const token of ['earnchat_configuration_control_upgrade_20260801.sql','earnchat_dynamic_chat_contract_20260801.sql','earnchat_dynamic_operations_contract_20260801.sql','earnchat_configuration_control_verify_20260801.sql'])requireToken(runOrder,token,'Production SQL run order missing');
+for(const token of ['earnchat_configuration_control_upgrade_20260801.sql','earnchat_dynamic_chat_contract_20260801.sql','earnchat_task_restart_contract_20260801.sql','earnchat_dynamic_operations_contract_20260801.sql','earnchat_configuration_control_verify_20260801.sql'])requireToken(runOrder,token,'Production SQL run order missing');
 
 const routeMatch=appConfig.match(/ROUTES=\[([^\]]+)\]/);
 const routes=new Set((routeMatch?.[1]||'').match(/'([^']+)'/g)?.map(value=>value.slice(1,-1))||[]);
@@ -105,6 +108,9 @@ const secretFiles=walk(root).filter(name=>/\.(?:js|mjs|html|json|yml|yaml)$/.tes
 const secretPatterns=[/SUPABASE_SERVICE_ROLE\s*=/i,/DATABASE_URL\s*=/i,/postgres(?:ql)?:\/\/[^\s'"`]+/i,/service_role\s*[:=]\s*['"][^'"]+/i];
 for(const secretFile of secretFiles){const source=fs.readFileSync(secretFile,'utf8');for(const pattern of secretPatterns)if(pattern.test(source))failures.push(`Potential privileged credential found in ${rel(secretFile)}`)}
 
+const temporary=['.github/workflows/finalize-runtime-configuration.yml','scripts/finalize-customer-config.mjs','scripts/finalize-api-config.mjs'];
+for(const name of temporary)if(exists(name))failures.push(`Temporary migration file remains: ${name}`);
+
 if(failures.length){console.error(`Production validation failed with ${failures.length} issue(s):\n- ${failures.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat structural production validation passed.');
-console.log(`Checked ${required.length} required files and ${jsFiles.length} JavaScript modules across configuration, customer runtime, Admin, chat, operational contracts, security, routing and copy-only deployment.`);
+console.log(`Checked ${required.length} required files and ${jsFiles.length} JavaScript modules across configuration, customer runtime, Admin, chat, task restart, withdrawals, KYC, security, routing and copy-only deployment.`);
