@@ -1,7 +1,8 @@
 import{sb}from'./supabase-client.js';
 
 const unwrap=result=>{if(result.error)throw result.error;return result.data};
-const rpc=(name,args={})=>sb.rpc(name,args).then(unwrap);
+const withTimeout=(promise,ms=15000,label='Request')=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${label} timed out. Check your connection and retry.`)),ms))]);
+const rpc=(name,args={})=>withTimeout(sb.rpc(name,args).then(unwrap),15000,'Supabase request');
 const select=(table,columns='*')=>sb.from(table).select(columns);
 const maskAccount=value=>{const raw=String(value||'').replace(/\s+/g,'');if(!raw)return'';return`${'•'.repeat(Math.max(4,Math.min(8,raw.length-4)))}${raw.slice(-4)}`};
 const maskWithdrawal=row=>({...row,payout_snapshot:{account_name:row.payout_snapshot?.account_name||'',provider:row.payout_snapshot?.provider||'',account_number:maskAccount(row.payout_snapshot?.account_number)}});
@@ -10,6 +11,7 @@ let memberCache=null,memberAt=0,memberPromise=null,memberOwner=null;
 let configCache=null,configAt=0,configPromise=null;
 try{const saved=JSON.parse(localStorage.getItem(CONFIG_STORAGE_KEY)||'null');if(saved?.data){configCache=saved.data;configAt=Number(saved.savedAt||0)}}catch{}
 let adminOverviewCache=null,adminOverviewAt=0,adminOverviewPromise=null;
+let adminStatusCache=null,adminStatusAt=0,adminStatusOwner=null,adminStatusPromise=null;
 
 async function sessionUserId(){
   const{data,error}=await sb.auth.getSession();
@@ -21,6 +23,7 @@ export function invalidateMemberState(){
   window.dispatchEvent(new CustomEvent('earnchat:member-state-invalidated'));
 }
 export function invalidateAdminOverview(){adminOverviewCache=null;adminOverviewAt=0;adminOverviewPromise=null}
+function invalidateAdminStatus(){adminStatusCache=null;adminStatusAt=0;adminStatusOwner=null;adminStatusPromise=null}
 export function invalidateBusinessConfig(section='all',notify=true){
   configCache=null;configAt=0;configPromise=null;
   if(notify)window.dispatchEvent(new CustomEvent('earnchat:config-invalidated',{detail:{section}}));
@@ -53,6 +56,17 @@ async function businessConfig(force=false){
   configPromise=request;
   try{return await request}finally{if(configPromise===request)configPromise=null}
 }
+async function adminStatus(force=false){
+  const owner=await sessionUserId();
+  if(!owner){invalidateAdminStatus();return false}
+  if(adminStatusOwner&&adminStatusOwner!==owner)invalidateAdminStatus();
+  if(!force&&adminStatusCache!==null&&adminStatusOwner===owner&&Date.now()-adminStatusAt<300000)return adminStatusCache;
+  if(adminStatusPromise&&adminStatusOwner===owner)return adminStatusPromise;
+  adminStatusOwner=owner;
+  const request=rpc('earnchat_is_admin').then(value=>{adminStatusCache=!!value;adminStatusAt=Date.now();return adminStatusCache});
+  adminStatusPromise=request;
+  try{return await request}finally{if(adminStatusPromise===request)adminStatusPromise=null}
+}
 async function adminOverview(force=false){
   if(!force&&adminOverviewCache&&Date.now()-adminOverviewAt<ADMIN_CACHE_MS)return adminOverviewCache;
   if(adminOverviewPromise)return adminOverviewPromise;
@@ -80,11 +94,12 @@ export const api={
  session:async()=>unwrap(await sb.auth.getSession()),
  signup:async(email,password,fullName,country)=>unwrap(await sb.auth.signUp({email,password,options:{data:{full_name:fullName,country}}})),
  login:async(email,password)=>unwrap(await sb.auth.signInWithPassword({email,password})),
- logout:async()=>{try{return unwrap(await sb.auth.signOut())}finally{invalidateMemberState();invalidateAdminOverview()}},
+ logout:async()=>{try{return unwrap(await sb.auth.signOut())}finally{invalidateMemberState();invalidateAdminOverview();invalidateAdminStatus()}},
  ensureProfile:async(fullName,country)=>mutateMember('ensure_earnchat_profile',{p_full_name:fullName||null,p_country:country||null}),
  state:memberState,
  refreshState:()=>memberState(true),
  business:businessConfig,
+ peekBusiness:()=>configCache,
  refreshBusiness:()=>businessConfig(true),
  invalidateBusiness:invalidateBusinessConfig,
  payments:async()=>unwrap(await select('earnchat_payment_activity','masked_name,country_code,amount,currency,payout_method,paid_at').eq('is_visible',true).eq('is_verified',true).order('paid_at',{ascending:false}).limit(2)),
@@ -110,7 +125,7 @@ export const api={
  ledger:async userId=>unwrap(await select('earnchat_ledger').eq('user_id',userId).order('created_at',{ascending:false}).limit(60)),
  withdrawals:async userId=>unwrap(await select('earnchat_withdrawals').eq('user_id',userId).order('created_at',{ascending:false}).limit(50)),
  event:async(name,session,page,metadata={})=>rpc('record_earnchat_event',{p_event:name,p_session:session||null,p_page:page||null,p_metadata:metadata}),
- isAdmin:async()=>rpc('earnchat_is_admin'),
+ isAdmin:adminStatus,
  adminOverview,
  adminTasks:async()=>rpc('admin_list_earnchat_tasks'),
  adminSaveTask:async(id,payload)=>mutateAdmin('admin_upsert_earnchat_task',{p_id:id||null,p_payload:payload}),

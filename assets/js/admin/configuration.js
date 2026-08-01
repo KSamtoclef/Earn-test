@@ -120,9 +120,10 @@ function bindPreviews(){const root=host();root.addEventListener('input',event=>{
 
 export async function renderConfiguration(){
  const target=host();if(!target)return;
- target.innerHTML='<article class="card"><b>Loading authoritative configuration…</b></article>';
+ const cached=api.peekBusiness?.();
+ if(!cached)target.innerHTML='<article class="card"><b>Loading authoritative configuration…</b></article>';
  try{
-  const config=normalizeBusinessConfig(await api.business());
+  const config=normalizeBusinessConfig(cached||await api.business());
   target.innerHTML=`<article class="card config-version-card"><span class="eyebrow">AUTHORITATIVE CONFIGURATION</span><h2>Platform control center</h2><p>Version <b>${esc(config.configuration_version||config.version)}</b>${config.updated_at?` · Updated ${new Date(config.updated_at).toLocaleString()}`:''}</p><p>Security infrastructure, routes, RLS and credentials remain code-controlled.</p></article>${businessForm(config)}${generalForm(config)}${landingForm(config)}${chatForm(config)}${tasksForm(config)}${referralForm(config)}${withdrawalForm(config)}${kycForm(config)}${flagsForm(config)}${levelsForm(config)}`;
   $$('.admin-config-form',target).forEach(form=>{const button=$('button[type="submit"]',form);if(button)button.dataset.label=button.textContent;form.onsubmit=async event=>{event.preventDefault();const sectionName=form.dataset.section;setBusy(form,true);try{const payload=payloadFor(sectionName,form),response=sectionName==='business'?await api.adminUpdateBusiness(payload):await api.adminUpdateConfiguration(sectionName,payload);notifySaved(form,sectionName);setBusy(form,false,`Saved. Configuration version ${response?.configuration_version||response?.version||'updated'}.`)}catch(error){setBusy(form,false,error.message||'Configuration could not be saved.')}}});
   $$('.admin-level-form',target).forEach(form=>{const button=$('button[type="submit"]',form);if(button)button.dataset.label=button.textContent;form.onsubmit=async event=>{event.preventDefault();setBusy(form,true);try{const payload=Object.fromEntries([...new FormData(form).entries()].map(([key,value])=>[key,numberValue(value)]));await api.adminUpdateLevel(form.dataset.level,payload);notifySaved(form,'levels');setBusy(form,false,`${form.dataset.level} saved.`)}catch(error){setBusy(form,false,error.message||'Level could not be saved.')}}});
