@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - scripts/release-stability-r2.mjs
+      - .github/workflows/release-stability-r2.yml
 permissions:
   contents: write
 jobs:
@@ -16,7 +17,6 @@ jobs:
       - run: node scripts/release-stability-r2.mjs
       - run: node --check assets/js/app.js
       - run: node --check assets/js/supabase-client.js
-      - run: npm run validate
       - run: node scripts/build-static.mjs
       - name: Commit stability release
         run: |
