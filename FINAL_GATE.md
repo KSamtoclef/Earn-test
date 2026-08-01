@@ -1,6 +1,6 @@
 # Earn Chat final gate
 
-Commit: 4449ea7dbc95f3bc8fe012611ca70507b1f5a4d1
+Commit: 3f7e1bef60be42c21b75dd5e5ebe82db45f913c2
 Validation exit: 0
 Build exit: 0
 
