@@ -46,3 +46,4 @@ jobs:
           git add FINAL_GATE.md
           git commit -m "Record final release gate" || exit 0
           git push
+# Triggered after final cleanup.
