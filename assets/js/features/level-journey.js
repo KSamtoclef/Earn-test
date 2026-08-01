@@ -48,5 +48,5 @@ function schedule(delay=40,force=false){clearTimeout(renderTimer);renderTimer=se
 document.addEventListener('click',event=>{const chats=event.target.closest('[data-earn-action="chats"]');if(chats){document.getElementById('chat-partners')?.scrollIntoView({behavior:'smooth',block:'start'});return}const action=event.target.closest('[data-requirement-action]');if(!action)return;const target=action.dataset.requirementAction;if(target==='points'){const details=$('#activity-points-guide');if(details){details.open=true;details.scrollIntoView({behavior:'smooth',block:'start'})}return}location.hash=`#/${target}`},true);
 window.addEventListener('earnchat:member-state',event=>{if(event.detail){latestState=event.detail;schedule(0)}});
 window.addEventListener('earnchat:member-state-invalidated',()=>{latestState=null});
-window.addEventListener('hashchange',()=>schedule(20));
+window.addEventListener('earnchat:route-view',event=>{if(['home','earn','tasks','visits','upgrade','referrals','withdraw','profile'].includes(event.detail?.route))schedule(0)});
 ensureShell();schedule(0);
