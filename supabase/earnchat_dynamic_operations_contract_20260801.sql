@@ -1,25 +1,7 @@
--- Earn Chat dynamic operational contracts
+-- Earn Chat dynamic withdrawal and KYC contracts
 -- Run after earnchat_configuration_control_upgrade_20260801.sql.
 -- Idempotent. Back up the database before applying production migrations.
 begin;
-
-create or replace function public.cancel_earnchat_task_claim(p_claim uuid)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,pg_temp
-as $$
-declare uid uuid:=auth.uid();claim public.earnchat_task_claims%rowtype;
-begin
- if uid is null then raise exception 'Authentication required'; end if;
- select * into claim from public.earnchat_task_claims where id=p_claim and user_id=uid for update;
- if not found then raise exception 'Task attempt unavailable'; end if;
- if claim.status<>'started' then raise exception 'Only an incomplete started task can be restarted'; end if;
- update public.earnchat_task_claims
- set status='cancelled',returned_at=coalesce(returned_at,now()),review_reason='Restarted by member'
- where id=claim.id;
- return jsonb_build_object('ok',true,'claim_id',claim.id,'status','cancelled');
-end$$;
 
 create or replace function public.request_earnchat_withdrawal(p_wallet text,p_amount bigint,p_method text,p_payout jsonb)
 returns jsonb
@@ -126,7 +108,6 @@ begin
  return jsonb_build_object('ok',true,'submission_id',kid,'status','submitted','review_hours',coalesce((cfg->>'review_hours')::int,48));
 end$$;
 
-grant execute on function public.cancel_earnchat_task_claim(uuid) to authenticated;
 grant execute on function public.request_earnchat_withdrawal(text,bigint,text,jsonb) to authenticated;
 grant execute on function public.submit_earnchat_kyc(text,jsonb) to authenticated;
 
