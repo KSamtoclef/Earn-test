@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - scripts/final-stability-performance.mjs
+      - .github/workflows/final-stability-performance.yml
 permissions:
   contents: write
 jobs:
