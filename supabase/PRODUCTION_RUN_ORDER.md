@@ -4,38 +4,64 @@ Back up the Supabase database before running production SQL.
 
 ## Existing database used for the current live test
 
-Run these idempotent upgrades in this order:
+Run these idempotent upgrades in this exact order:
 
 1. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
 2. `earnchat_level_chat_upgrade_20260731.sql`
-3. `earnchat_production_verify.sql` — read-only verification
+3. `earnchat_configuration_control_upgrade_20260801.sql`
+4. `earnchat_dynamic_chat_contract_20260801.sql`
+5. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
+6. `earnchat_production_verify.sql` — read-only production verification
 
 Optional paused starter tasks:
 
-4. `earnchat_starter_tasks_seed.sql`
+7. `earnchat_starter_tasks_seed.sql`
 
-Expected result from the final member upgrade:
+The two 2026-08-01 upgrades are required for the Admin-driven configuration system. They add:
 
-```text
-Earn Chat production-complete bonus, points, commissions, 45-second chat and Admin overview upgrade completed
-```
+- configuration versioning;
+- validated configuration sections;
+- Admin-only mutation RPCs;
+- configuration audit logging;
+- dynamic guided-chat duration;
+- dynamic reply count;
+- dynamic minimum reply length;
+- dynamic attempt expiry;
+- dynamic guided-chat Activity Points;
+- one server/client guided-chat contract.
 
-The final database version must be:
+Do not expose the new Admin configuration controls before steps 3 and 4 have succeeded. The customer runtime is designed to use safe fallbacks, but configurable values are authoritative only after the database functions are installed.
+
+The base production version remains:
 
 ```text
 20260731-production-complete-r1
 ```
 
+The configuration row must additionally show:
+
+```text
+configuration_version >= 1
+```
+
 Verification requirements:
 
-- every object row shows `exists = true`;
-- every `problem_count` row shows `0`;
-- at least one trusted administrator is listed;
-- signup bonuses are present exactly once and use the correct country amount;
+- exactly one business-settings row exists;
+- all configuration sections are JSON objects;
+- every unknown feature flag count is `0`;
+- every invalid level/order/amount count is `0`;
+- every duplicate chat/task credit count is `0`;
+- every duplicate open task-claim count is `0`;
+- the public configuration contains no `updated_by` field;
+- guided-chat start, resume and completion return the configured contract;
+- only trusted Admin accounts can mutate configuration;
+- configuration updates produce Admin audit entries;
+- every object row in the original production verification shows `exists = true`;
+- every original `problem_count` row shows `0`;
+- signup bonuses remain present exactly once and use the correct country amount;
 - Activity Points match the point-event ledger;
 - no duplicate direct-referral commission exists;
-- the guided-chat server minimum is 45 seconds;
-- the Admin overview function contains exact country-separated liabilities and suspicious-account totals.
+- Admin overview contains country-separated liabilities and suspicious-account totals.
 
 ## Fresh or reset database
 
@@ -44,11 +70,14 @@ Run:
 1. `earnchat_production_install.sql`
 2. `earnchat_kyc_bulk_admin_upgrade_20260730.sql`
 3. `earnchat_level_chat_upgrade_20260731.sql`
-4. `earnchat_production_verify.sql`
+4. `earnchat_configuration_control_upgrade_20260801.sql`
+5. `earnchat_dynamic_chat_contract_20260801.sql`
+6. `earnchat_configuration_control_verify_20260801.sql`
+7. `earnchat_production_verify.sql`
 
-The current installer creates the base production schema. The two current upgrades then apply the final KYC/recovery, bonus, points, commission, earned-level, chat-timing and exact Admin-overview contracts.
+The installer creates the base production schema. The later upgrades apply KYC/recovery, bonus, points, direct commissions, earned levels, the versioned Admin configuration system, and the dynamic server-enforced guided-chat contract.
 
-Do not run the removed certification migration or older multi-file production packages.
+Do not run removed certification migrations or older multi-file production packages.
 
 After SQL succeeds, confirm the trusted administrator:
 
@@ -58,4 +87,4 @@ from public.profiles
 where is_admin=true;
 ```
 
-Only a trusted account should be marked as an administrator.
+Only trusted accounts should be marked as administrators.
