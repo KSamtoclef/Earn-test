@@ -1,8 +1,8 @@
 # Earn Chat final production check
 
-Commit: 576e725640b0d9475e8582770533f8598dfd3709
+Commit: 254290207ae378ecd52f9d114ffbbb7e69fafacb
 Validation exit: 0
-Build exit: 1
+Build exit: 0
 
 ## Validation output
 ```text
@@ -28,15 +28,5 @@ Earn Chat deployment configuration validation passed.
 Earn Chat structural production validation passed.
 Checked 33 required files and 18 JavaScript modules across configuration, customer runtime, Admin, chat, task restart, withdrawals, KYC, security, routing and copy-only deployment.
 Earn Chat deployment configuration validation passed.
-file:///home/runner/work/Earn-test/Earn-test/scripts/build-static.mjs:25
-  if(!sourceApp.includes(token))throw new Error(`Application source is missing required contract: ${token}`);
-                                      ^
-
-Error: Application source is missing required contract: CHAT_SECONDS=45
-    at file:///home/runner/work/Earn-test/Earn-test/scripts/build-static.mjs:25:39
-    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
-
-Node.js v22.23.1
+Static deployment bundle copied from validated authoritative source.
 ```
