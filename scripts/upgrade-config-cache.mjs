@@ -44,3 +44,4 @@ replace(
 );
 
 fs.writeFileSync(path,source);
+// Triggered after the workflow definition was installed.
