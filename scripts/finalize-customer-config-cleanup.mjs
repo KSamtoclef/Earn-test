@@ -8,3 +8,4 @@ const fixes=[
 ];
 for(const[from,to]of fixes)source=source.replace(from,to);
 fs.writeFileSync(path,source);
+
