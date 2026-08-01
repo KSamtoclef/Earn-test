@@ -1,15 +1,32 @@
-file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:4
-function mustReplace(source,from,to,label){if(!source.includes(from))throw new Error(`Missing ${label}`);return source.replace(from,to)}
-                                                                           ^
+matcher_exit=0
+migration_exit=0
+api_check=0
+config_check=0
+core_check=0
+/home/runner/work/Earn-test/Earn-test/assets/js/app.js:99
+function startPresence(){clearInterval(app.presenceTimer);app.presenceTimer=setInterval(()=>{if(!document.hidden)sendPresence()},60000);document.addEventListener('visibilitychange',()=>{if(document.hidden)api.presenceInactive(presenceSession).catch(()=>{});else{void verifySession();sendPresence()}});window.addEventListener('focus',()=>void verifySession());window.addEventListener('pageshow',()=>void verifySession());window.addEventListener('pagehide',()=>api.presenceInactive(presenceSession).catch(()=>{})}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ^
 
-Error: Missing throttled session verification
-    at mustReplace (file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:4:76)
-    at file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:64:9
-    at edit (file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:3:78)
-    at file:///home/runner/work/Earn-test/Earn-test/scripts/final-stability-performance.mjs:57:1
-    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+SyntaxError: missing ) after argument list
+    at checkSyntax (node:internal/main/check_syntax:74:5)
 
 Node.js v22.23.1
-migration_exit=1
+app_check=1
+
+> validate
+> node scripts/validate-production.mjs && node scripts/validate-deployment.mjs
+
+Production validation failed with 1 issue(s):
+- JavaScript syntax failed: assets/js/app.js
+/home/runner/work/Earn-test/Earn-test/assets/js/app.js:99
+function startPresence(){clearInterval(app.presenceTimer);app.presenceTimer=setInterval(()=>{if(!document.hidden)sendPresence()},60000);document.addEventListener('visibilitychange',()=>{if(document.hidden)api.presenceInactive(presenceSession).catch(()=>{});else{void verifySession();sendPresence()}});window.addEventListener('focus',()=>void verifySession());window.addEventListener('pageshow',()=>void verifySession());window.addEventListener('pagehide',()=>api.presenceInactive(presenceSession).catch(()=>{})}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ^
+
+SyntaxError: missing ) after argument list
+    at checkSyntax (node:internal/main/check_syntax:74:5)
+
+Node.js v22.23.1
+
+validate_exit=1
+Static deployment bundle copied from validated authoritative source.
+build_exit=0
