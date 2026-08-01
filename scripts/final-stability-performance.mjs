@@ -70,3 +70,5 @@ edit('assets/js/app.js',source=>{
 });
 
 edit('assets/css/app.css',source=>source+`\n/* Final Admin stability and mobile readability */\n.admin-config-section{background:#fff;border:1px solid var(--line);border-radius:20px;margin:12px 0;overflow:hidden}\n.admin-config-section>summary{display:flex;align-items:flex-start;gap:12px;padding:17px 18px;cursor:pointer;list-style:none}\n.admin-config-section>summary::-webkit-details-marker{display:none}\n.admin-config-section>summary:before{content:'›';font-size:24px;font-weight:900;line-height:1;transform:rotate(0deg);transition:transform .15s ease}\n.admin-config-section[open]>summary:before{transform:rotate(90deg)}\n.admin-config-section>summary span{display:grid;gap:4px;min-width:0}\n.admin-config-section>summary b{display:block;font-size:18px;line-height:1.25}\n.admin-config-section>summary small{display:block;color:var(--muted);font-size:13px;line-height:1.4}\n.admin-config-form,.level-config-list{padding:0 18px 18px}\n@media(max-width:600px){.admin-config-section>summary{padding:15px}.admin-config-form,.level-config-list{padding:0 15px 15px}}\n`);
+
+// Workflow trigger after installation.
