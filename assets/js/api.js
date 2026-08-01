@@ -84,6 +84,7 @@ export const api={
  feedback:async()=>unwrap(await select('earnchat_member_feedback','quote,country_code').eq('is_visible',true).eq('verified_paid_member',true).order('created_at',{ascending:false}).limit(3)),
  tasks:async()=>rpc('list_earnchat_tasks'),
  startTask:async id=>rpc('start_earnchat_task',{p_task:id}),
+ cancelTask:async id=>mutateMember('cancel_earnchat_task_claim',{p_claim:id}),
  submitTask:async(id,proof={})=>mutateMember('submit_earnchat_task',{p_claim:id,p_proof:proof}),
  openTaskClaim:async()=>rpc('get_my_open_task_claim'),
  startChat:async partner=>rpc('start_earnchat_chat',{p_partner:partner||null}),
