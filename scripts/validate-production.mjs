@@ -21,7 +21,7 @@ const required=[
  'assets/js/admin/admin.js','assets/js/admin/core.js','assets/js/admin/configuration.js',
  'assets/js/features/draft-recovery.js','assets/js/features/analytics.js','assets/js/features/task-status.js','assets/js/features/level-journey.js','assets/js/features/qualification.js',
  'supabase/earnchat_production_install.sql','supabase/earnchat_kyc_bulk_admin_upgrade_20260730.sql','supabase/earnchat_level_chat_upgrade_20260731.sql',
- 'supabase/earnchat_configuration_control_upgrade_20260801.sql','supabase/earnchat_dynamic_chat_contract_20260801.sql','supabase/earnchat_task_restart_contract_20260801.sql',
+ 'supabase/earnchat_configuration_control_upgrade_20260801.sql','supabase/earnchat_dynamic_chat_contract_20260801.sql','supabase/earnchat_dynamic_operations_contract_20260801.sql',
  'supabase/earnchat_configuration_control_verify_20260801.sql','supabase/earnchat_production_verify.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ];
 required.forEach(requireFile);
@@ -52,7 +52,7 @@ const taskStatus=read('assets/js/features/task-status.js');
 const build=read('scripts/build-static.mjs');
 const configSql=read('supabase/earnchat_configuration_control_upgrade_20260801.sql');
 const chatSql=read('supabase/earnchat_dynamic_chat_contract_20260801.sql');
-const taskRestartSql=read('supabase/earnchat_task_restart_contract_20260801.sql');
+const operationsSql=read('supabase/earnchat_dynamic_operations_contract_20260801.sql');
 const verifySql=read('supabase/earnchat_configuration_control_verify_20260801.sql');
 const runOrder=read('supabase/PRODUCTION_RUN_ORDER.md');
 
@@ -83,9 +83,9 @@ for(const token of ['restart-required','pending-review','approved','rejected','e
 
 for(const token of ['configuration_version','general_config jsonb','landing_config jsonb','chat_config jsonb','task_config jsonb','referral_config jsonb','withdrawal_config jsonb','kyc_config jsonb','feature_flags jsonb','earnchat_validate_configuration_section','admin_update_earnchat_configuration','get_earnchat_business_config','earnchat_admin_audit'])requireToken(configSql,token,'Configuration SQL contract missing');
 for(const token of ['earnchat_chat_contract','minimum_seconds','required_replies','minimum_reply_length','attempt_expiry_minutes','earnchat_reconcile_points','start_earnchat_chat','get_my_open_chat_attempt','complete_earnchat_chat'])requireToken(chatSql,token,'Dynamic chat SQL contract missing');
-for(const token of ['cancel_earnchat_task_claim',"status='expired'",'Restarted by member','grant execute'])requireToken(taskRestartSql,token,'Task restart SQL contract missing');
+for(const token of ['cancel_earnchat_task_claim',"status='cancelled'",'Restarted by member','request_earnchat_withdrawal','maximum_open_requests','bank_transfer_enabled','mpesa_enabled','submit_earnchat_kyc','reference_required','grant execute'])requireToken(operationsSql,token,'Dynamic operations SQL contract missing');
 for(const token of ['duplicate_level_rank','invalid_level_amounts','invalid_level_order','unknown_feature_flags','invalid_chat_contract','duplicate_open_task_claims','duplicate_task_credits','duplicate_chat_credits','normalized_public_configuration'])requireToken(verifySql,token,'Configuration verification missing');
-for(const token of ['earnchat_configuration_control_upgrade_20260801.sql','earnchat_dynamic_chat_contract_20260801.sql','earnchat_task_restart_contract_20260801.sql','earnchat_configuration_control_verify_20260801.sql'])requireToken(runOrder,token,'Production SQL run order missing');
+for(const token of ['earnchat_configuration_control_upgrade_20260801.sql','earnchat_dynamic_chat_contract_20260801.sql','earnchat_dynamic_operations_contract_20260801.sql','earnchat_configuration_control_verify_20260801.sql'])requireToken(runOrder,token,'Production SQL run order missing');
 
 const routeMatch=appConfig.match(/ROUTES=\[([^\]]+)\]/);
 const routes=new Set((routeMatch?.[1]||'').match(/'([^']+)'/g)?.map(value=>value.slice(1,-1))||[]);
@@ -107,4 +107,4 @@ for(const secretFile of secretFiles){const source=fs.readFileSync(secretFile,'ut
 
 if(failures.length){console.error(`Production validation failed with ${failures.length} issue(s):\n- ${failures.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat structural production validation passed.');
-console.log(`Checked ${required.length} required files and ${jsFiles.length} JavaScript modules across configuration, customer runtime, Admin, task/chat contracts, security, routing and copy-only deployment.`);
+console.log(`Checked ${required.length} required files and ${jsFiles.length} JavaScript modules across configuration, customer runtime, Admin, chat, operational contracts, security, routing and copy-only deployment.`);
