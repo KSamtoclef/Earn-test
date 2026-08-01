@@ -46,4 +46,4 @@ jobs:
           git add FINAL_PRODUCTION_CHECK.md
           git commit -m "Record final production validation and build" || exit 0
           git push
-# Verification run 2 after restoring the task restart contract.
+# Final verification after source, SQL order, and validator cleanup.
