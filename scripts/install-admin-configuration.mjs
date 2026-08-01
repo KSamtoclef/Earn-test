@@ -21,3 +21,4 @@ update('assets/js/admin/core.js',source=>{
  source=source.replace(rendererMarker,'withdrawals,kyc,payments,configuration:renderConfiguration,analytics,audit');
  return source;
 });
+// Triggered after the workflow definition was installed.
