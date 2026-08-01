@@ -46,3 +46,4 @@ jobs:
           git add FINAL_PRODUCTION_CHECK.md
           git commit -m "Record final production validation and build" || exit 0
           git push
+# Triggered after final validator replacement.
