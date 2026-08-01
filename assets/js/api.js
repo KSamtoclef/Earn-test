@@ -1,23 +1,68 @@
 import{sb}from'./supabase-client.js';
-const unwrap=r=>{if(r.error)throw r.error;return r.data};
+
+const unwrap=result=>{if(result.error)throw result.error;return result.data};
 const rpc=(name,args={})=>sb.rpc(name,args).then(unwrap);
 const select=(table,columns='*')=>sb.from(table).select(columns);
 const maskAccount=value=>{const raw=String(value||'').replace(/\s+/g,'');if(!raw)return'';return`${'•'.repeat(Math.max(4,Math.min(8,raw.length-4)))}${raw.slice(-4)}`};
 const maskWithdrawal=row=>({...row,payout_snapshot:{account_name:row.payout_snapshot?.account_name||'',provider:row.payout_snapshot?.provider||'',account_number:maskAccount(row.payout_snapshot?.account_number)}});
 const MEMBER_CACHE_MS=10000,CONFIG_CACHE_MS=60000,ADMIN_CACHE_MS=12000;
-let memberCache=null,memberAt=0,memberPromise=null,configCache=null,configAt=0,configPromise=null,adminOverviewCache=null,adminOverviewAt=0,adminOverviewPromise=null;
-export function invalidateMemberState(){memberCache=null;memberAt=0;window.dispatchEvent(new CustomEvent('earnchat:member-state-invalidated'))}
-export function invalidateAdminOverview(){adminOverviewCache=null;adminOverviewAt=0}
-async function memberState(force=false){if(!force&&memberCache&&Date.now()-memberAt<MEMBER_CACHE_MS)return memberCache;if(memberPromise)return memberPromise;memberPromise=rpc('get_my_earnchat_state').then(data=>{memberCache=data;memberAt=Date.now();window.dispatchEvent(new CustomEvent('earnchat:member-state',{detail:data}));return data}).finally(()=>{memberPromise=null});return memberPromise}
-async function businessConfig(force=false){if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS)return configCache;if(configPromise)return configPromise;configPromise=rpc('get_earnchat_business_config').then(data=>{configCache=data;configAt=Date.now();return data}).finally(()=>{configPromise=null});return configPromise}
-async function adminOverview(force=false){if(!force&&adminOverviewCache&&Date.now()-adminOverviewAt<ADMIN_CACHE_MS)return adminOverviewCache;if(adminOverviewPromise)return adminOverviewPromise;adminOverviewPromise=rpc('admin_get_earnchat_overview').then(data=>{adminOverviewCache=data;adminOverviewAt=Date.now();return data}).finally(()=>{adminOverviewPromise=null});return adminOverviewPromise}
+let memberCache=null,memberAt=0,memberPromise=null,memberOwner=null;
+let configCache=null,configAt=0,configPromise=null;
+let adminOverviewCache=null,adminOverviewAt=0,adminOverviewPromise=null;
+
+async function sessionUserId(){
+  const{data,error}=await sb.auth.getSession();
+  if(error)throw error;
+  return data.session?.user?.id||null;
+}
+export function invalidateMemberState(){
+  memberCache=null;memberAt=0;memberOwner=null;memberPromise=null;
+  window.dispatchEvent(new CustomEvent('earnchat:member-state-invalidated'));
+}
+export function invalidateAdminOverview(){adminOverviewCache=null;adminOverviewAt=0;adminOverviewPromise=null}
+async function memberState(force=false){
+  const owner=await sessionUserId();
+  if(!owner){invalidateMemberState();return null}
+  if(memberOwner&&memberOwner!==owner)invalidateMemberState();
+  if(!force&&memberCache&&memberOwner===owner&&Date.now()-memberAt<MEMBER_CACHE_MS)return memberCache;
+  if(memberPromise&&memberOwner===owner)return memberPromise;
+  memberOwner=owner;
+  const request=rpc('get_my_earnchat_state').then(data=>{
+    if(memberOwner!==owner)return null;
+    memberCache=data;memberAt=Date.now();
+    window.dispatchEvent(new CustomEvent('earnchat:member-state',{detail:data}));
+    return data;
+  });
+  memberPromise=request;
+  try{return await request}finally{if(memberPromise===request)memberPromise=null}
+}
+async function businessConfig(force=false){
+  if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS)return configCache;
+  if(configPromise)return configPromise;
+  const request=rpc('get_earnchat_business_config').then(data=>{configCache=data;configAt=Date.now();return data});
+  configPromise=request;
+  try{return await request}finally{if(configPromise===request)configPromise=null}
+}
+async function adminOverview(force=false){
+  if(!force&&adminOverviewCache&&Date.now()-adminOverviewAt<ADMIN_CACHE_MS)return adminOverviewCache;
+  if(adminOverviewPromise)return adminOverviewPromise;
+  const request=rpc('admin_get_earnchat_overview').then(data=>{adminOverviewCache=data;adminOverviewAt=Date.now();return data});
+  adminOverviewPromise=request;
+  try{return await request}finally{if(adminOverviewPromise===request)adminOverviewPromise=null}
+}
 async function mutateMember(name,args={}){const data=await rpc(name,args);invalidateMemberState();return data}
 async function mutateAdmin(name,args={}){const data=await rpc(name,args);invalidateAdminOverview();return data}
+
+sb.auth.onAuthStateChange((_event,session)=>{
+  const owner=session?.user?.id||null;
+  if(owner!==memberOwner)invalidateMemberState();
+});
+
 export const api={
  session:async()=>unwrap(await sb.auth.getSession()),
  signup:async(email,password,fullName,country)=>unwrap(await sb.auth.signUp({email,password,options:{data:{full_name:fullName,country}}})),
  login:async(email,password)=>unwrap(await sb.auth.signInWithPassword({email,password})),
- logout:async()=>{const data=unwrap(await sb.auth.signOut());invalidateMemberState();return data},
+ logout:async()=>{try{return unwrap(await sb.auth.signOut())}finally{invalidateMemberState();invalidateAdminOverview()}},
  ensureProfile:async(fullName,country)=>mutateMember('ensure_earnchat_profile',{p_full_name:fullName||null,p_country:country||null}),
  state:memberState,
  refreshState:()=>memberState(true),
