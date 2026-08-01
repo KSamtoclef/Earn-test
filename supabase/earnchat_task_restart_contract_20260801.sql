@@ -3,6 +3,25 @@
 -- Idempotent. Back up the database before applying production migrations.
 begin;
 
+-- Older Earn Chat databases restrict task claims to the original statuses.
+-- Expand the constraint before the restart function writes `expired`.
+alter table public.earnchat_task_claims
+ drop constraint if exists earnchat_task_claims_status_check;
+
+alter table public.earnchat_task_claims
+ add constraint earnchat_task_claims_status_check
+ check(status in(
+  'started',
+  'pending',
+  'submitted',
+  'under_review',
+  'approved',
+  'rejected',
+  'reversed',
+  'cancelled',
+  'expired'
+ ));
+
 create or replace function public.cancel_earnchat_task_claim(p_claim uuid)
 returns jsonb
 language plpgsql
