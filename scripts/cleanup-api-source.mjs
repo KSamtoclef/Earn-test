@@ -1,0 +1,10 @@
+import fs from'node:fs';
+const path='assets/js/api.js';
+let source=fs.readFileSync(path,'utf8');
+const authBlock=`\nsb.auth.onAuthStateChange((_event,session)=>{\n  const owner=session?.user?.id||null;\n  if(owner!==memberOwner)invalidateMemberState();\n});\n`;
+if(!source.includes(authBlock))throw new Error('API auth cleanup target not found');
+source=source.replace(authBlock,'\n');
+const publicLine=" publicStats:async()=>rpc('get_public_earnchat_stats'),\n";
+if(!source.includes(publicLine))throw new Error('Public stats API cleanup target not found');
+source=source.replace(publicLine,'');
+fs.writeFileSync(path,source);
