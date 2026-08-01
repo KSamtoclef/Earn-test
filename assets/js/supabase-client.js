@@ -1,6 +1,6 @@
 import{SUPABASE_URL,SUPABASE_ANON_KEY}from'./app-config.js';
 
-export const RELEASE_VERSION='20260731-launch-lite-r2';
+export const RELEASE_VERSION='20260731-launch-lite-r3';
 const loadedStyles=new Map(),loadedFeatures=new Map();
 
 function loadStyle(href,key){
