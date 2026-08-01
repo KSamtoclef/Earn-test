@@ -20,7 +20,7 @@ for(const file of js){
 
 const config=read('assets/js/app-config.js'),loader=read('assets/js/supabase-client.js'),api=read('assets/js/api.js'),journey=read('assets/js/features/level-journey.js'),chat=read('assets/js/features/guided-chat-experience.js'),motivation=read('assets/js/features/member-motivation.js'),levelCss=read('assets/css/level-chat-experience.css'),memberCss=read('assets/css/member-motivation.css'),core=read('assets/js/admin/core.js'),adminEntry=read('assets/js/admin/admin.js'),html=read('index.html');
 if(!config.includes("'upgrade'"))fail.push('ROUTES does not contain upgrade.');
-if(!loader.includes("RELEASE_VERSION='20260731-launch-lite-r2'"))fail.push('Final lightweight release identifier is missing.');
+if(!loader.includes("RELEASE_VERSION='20260731-launch-lite-r3'"))fail.push('Current lightweight release identifier is missing.');
 for(const token of ['loadedStyles=new Map','loadedFeatures=new Map','CUSTOMER_ROUTES','requestIdleCallback','levelFeature(false)'])if(!loader.includes(token))fail.push(`Route-driven loader missing: ${token}`);
 for(const pathToken of ["loadFeature('./features/level-journey.js'","loadFeature('./features/guided-chat-experience.js'","loadFeature('./features/member-motivation.js'","loadFeature('./features/referral-priority.js'"])if(!loader.includes(pathToken))fail.push(`Correct module-relative feature path missing: ${pathToken}`);
 if(loader.includes("loadFeature('./assets/js/features/"))fail.push('Page-relative dynamic import path remains in the module loader.');
@@ -35,9 +35,10 @@ if((journey.match(/<details/g)||[]).length<3)fail.push('Upgrade details are not 
 if(journey.includes('pageshow')||journey.includes('visibilitychange'))fail.push('Upgrade still forces background/visibility refreshes.');
 if(motivation.includes('member-welcome-card'))fail.push('Duplicate Home motivation renderer remains.');
 
-for(const token of ['REQUIRED_SECONDS=45','/ 00:45','minimum_seconds:REQUIRED_SECONDS','stopImmediatePropagation','completionPanel','Choose your next activity','data-go="tasks"','data-go="visits"','data-go="referrals"','data-go="home"'])if(!chat.includes(token))fail.push(`Final 45-second chat flow missing: ${token}`);
+for(const token of ['REQUIRED_SECONDS=45','/ 00:45','minimum_seconds:REQUIRED_SECONDS','stopImmediatePropagation','completionPanel','Choose your next activity','data-go="tasks"','data-go="visits"','data-go="referrals"','data-go="home"','chat-complete-live','ensureCompletionButton','timerObserver.observe(timer'])if(!chat.includes(token))fail.push(`Final clickable 45-second chat flow missing: ${token}`);
 if(/setInterval\([^,]+,\s*(?:350|500)\)/.test(chat))fail.push('High-frequency chat scanner remains.');
-for(const file of ['assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/guided-chat-experience.js','assets/js/features/level-journey.js'])if(read(file).includes('new MutationObserver'))fail.push(`Continuous observer remains in ${file}`);
+for(const file of ['assets/js/features/member-motivation.js','assets/js/features/referral-priority.js','assets/js/features/level-journey.js'])if(read(file).includes('new MutationObserver'))fail.push(`Continuous observer remains in ${file}`);
+if(chat.includes('new MutationObserver')&&!chat.includes('timerObserver.observe(timer'))fail.push('Chat observer is not scoped to the timer element.');
 
 for(const token of ['content-visibility:auto','upgrade-disclosure','benefit-chips','earn-option-grid','chat-next-grid','backdrop-filter:none!important','safe-area-inset-bottom','prefers-reduced-motion'])if(!levelCss.includes(token))fail.push(`Lightweight UI CSS missing: ${token}`);
 if(memberCss.includes('member-welcome-card')||memberCss.includes('linear-gradient')||!memberCss.includes('box-shadow:none'))fail.push('Motivation CSS still contains duplicate or expensive Home styling.');
@@ -64,4 +65,4 @@ for(const file of ['.github/workflows/final-authoritative-cleanup.yml','.github/
 
 if(fail.length){console.error(`Production validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat final launch validation passed.');
-console.log(`Checked ${required.length} required files, ${js.length} runtime modules, shared state, corrected dynamic imports, compact Upgrade, multi-option Earn, 45-second chat completion, Admin pagination and database contracts.`);
+console.log(`Checked ${required.length} required files, ${js.length} runtime modules, shared state, corrected dynamic imports, compact Upgrade, multi-option Earn, clickable 45-second chat completion, Admin pagination and database contracts.`);
