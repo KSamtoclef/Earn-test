@@ -1,0 +1,15 @@
+app_syntax=0
+api_syntax=0
+admin_core_syntax=0
+admin_configuration_syntax=0
+
+> validate
+> node scripts/validate-production.mjs && node scripts/validate-deployment.mjs
+
+Earn Chat structural production validation passed.
+Checked 33 required files and 18 JavaScript modules across configuration, customer runtime, Admin, chat, task restart, withdrawals, KYC, security, routing and copy-only deployment.
+Deployment validation failed with 1 issue(s):
+- Versioned assets must use one-year immutable caching.
+validation=1
+Static deployment bundle copied from validated authoritative source.
+build=0
