@@ -34,4 +34,4 @@ update('scripts/validate-production.mjs',source=>{
 });
 
 console.log('Final runtime source cleanup applied.');
-// Triggered after workflow installation.
+// Self-cleaning migration trigger.
