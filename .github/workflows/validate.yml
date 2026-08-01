@@ -16,3 +16,4 @@ jobs:
           node-version: 20
       - run: npm run validate
       - run: node scripts/build-static.mjs
+# Final production validation trigger: 2026-08-01
