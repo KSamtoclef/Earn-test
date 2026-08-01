@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - scripts/install-customer-configuration.mjs
+      - .github/workflows/install-customer-configuration.yml
 permissions:
   contents: write
 jobs:
