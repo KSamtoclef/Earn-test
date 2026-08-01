@@ -4,7 +4,7 @@ import{COUNTRY_FALLBACK,countryFromStorage,money}from'./app-config.js';
 import{normalizeBusinessConfig,getGeneralConfig,getLandingConfig,getChatConfig,getTaskConfig,getReferralConfig,getWithdrawalConfig,getKycConfig,getFeatureFlags,getPublicOrigin}from'./config-runtime.js';
 import{configureRouter,navigate,resolveRoute}from'./router.js';
 
-const RELEASE='20260801-source-consolidated-r1';
+const RELEASE='20260802-stability-r2';
 const app={session:null,user:null,state:null,profile:null,config:null,country:countryFromStorage(),suggestedCountry:null,taskClaim:null,chat:null,chatTimer:null,presenceTimer:null,explicitLogout:false,authVerifyTimer:null,sessionVerifyPromise:null,lastSessionVerifiedAt:0,adminModule:null};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
