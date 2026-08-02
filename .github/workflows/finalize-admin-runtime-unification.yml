@@ -1,0 +1,28 @@
+name: Finalize Admin runtime unification
+on:
+  push:
+    paths:
+      - scripts/finalize-admin-runtime-unification.mjs
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/finalize-admin-runtime-unification.mjs
+      - run: node --check assets/js/app.js
+      - run: node --check assets/js/api.js
+      - run: node --check assets/js/features/task-status.js
+      - run: node --check assets/js/features/qualification.js
+      - run: npm test
+      - name: Commit unified runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/app.js assets/js/api.js assets/js/features/task-status.js assets/js/features/qualification.js index.html scripts/build-static.mjs scripts/validate-production.mjs scripts/validate-final-completion.mjs supabase/PRODUCTION_RUN_ORDER.md
+          git commit -m "Unify every Admin setting with customer runtime"
+          git push
