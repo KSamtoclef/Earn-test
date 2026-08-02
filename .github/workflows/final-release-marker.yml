@@ -1,0 +1,26 @@
+name: Final release marker
+on:
+  push:
+    paths:
+      - scripts/final-release-marker.mjs
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/final-release-marker.mjs
+      - run: node --check assets/js/admin/core.js
+      - run: npm run validate
+      - run: node scripts/build-static.mjs
+      - name: Commit release marker
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/js/admin/core.js
+          git commit -m "Align Admin release marker with stability r2"
+          git push
