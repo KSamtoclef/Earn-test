@@ -81,7 +81,21 @@ fs.writeFileSync(outputApiPath,builtApi);
 let builtIndex=fs.readFileSync(outputIndexPath,'utf8');
 const appScript=/<script type="module" src="\.\/assets\/js\/app\.js[^\"]*"><\/script>/;
 if(!appScript.test(builtIndex))throw new Error('Application module tag is missing from index.html.');
-builtIndex=builtIndex.replace(appScript,match=>`<script type="module" src="./assets/js/final-completion.js?v=20260802-final-r1"></script>\n${match}`);
+builtIndex=builtIndex.replace(appScript,match=>`<script type="module" src="./assets/js/final-completion.js?v=20260802-final-r2"></script>\n${match}`);
+const neutralMoney=[
+ ['<strong id="preview-balance">₦2,000</strong>','<strong id="preview-balance">—</strong>'],
+ ['<b id="landing-chat">₦250</b>','<b id="landing-chat">—</b>'],
+ ['<b id="landing-chat-detail">₦250 per approved Starter chat</b>','<b id="landing-chat-detail">Reward shown after country selection</b>'],
+ ['<div class="amount" id="home-work">₦0</div>','<div class="amount" id="home-work">—</div>'],
+ ['<div id="home-work-pending">Pending ₦0</div>','<div id="home-work-pending">Pending —</div>'],
+ ['<b id="home-referral">₦0</b>','<b id="home-referral">—</b>'],
+ ['<span id="home-referral-pending">Pending ₦0</span>','<span id="home-referral-pending">Pending —</span>'],
+ ['<div class="amount" id="ref-balance">₦0</div>','<div class="amount" id="ref-balance">—</div>'],
+ ['<small id="ref-remaining">₦40,000 remaining</small>','<small id="ref-remaining">Loading eligibility…</small>'],
+ ['<h2 id="withdraw-available">₦0</h2>','<h2 id="withdraw-available">—</h2>'],
+ ['<p id="withdraw-limits">Minimum ₦40,000</p>','<p id="withdraw-limits">Loading withdrawal limits…</p>']
+];
+for(const [from,to] of neutralMoney)builtIndex=replaceRequired(builtIndex,from,to,'neutral first-paint money');
 fs.writeFileSync(outputIndexPath,builtIndex);
 
 if(!fs.existsSync(path.join(output,'index.html')))throw new Error('Static build did not produce public/index.html');
