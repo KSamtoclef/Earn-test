@@ -12,7 +12,7 @@ replace(
 
 replace(
 "function updateChatTimer(){if(!app.chat)return;const total=chatMinimumSeconds(),required=chatRequiredReplies(),elapsed=Math.max(0,Math.floor((Date.now()-app.chat.startedAt)/1000)),remaining=Math.max(0,total-elapsed),fmt=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;const timer=$('#chat-timer'),complete=$('#chat-complete');if(timer)timer.textContent=`${fmt(Math.min(elapsed,total))} / ${fmt(total)}`;if(app.chat.replies.length===required){$('#chat-ready')?.classList.remove('hidden');if(complete){complete.disabled=remaining>0;complete.textContent=remaining>0?`Ready in ${remaining}s`:chatConfig().completion_wording}}}",
-"function updateChatTimer(){if(!app.chat)return;const total=Math.max(1,Number(chatMinimumSeconds()||45)),required=Math.max(1,Number(chatRequiredReplies()||4)),started=Number(app.chat.startedAt||Date.now()),elapsed=Math.max(0,Math.floor((Date.now()-started)/1000)),remaining=Math.max(0,total-elapsed),fmt=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;const timer=$('#chat-timer'),complete=$('#chat-complete');if(timer){timer.textContent=remaining>0?`${fmt(remaining)} remaining`:'00:00 · Ready';timer.dataset.remaining=String(remaining)}if(app.chat.replies.length===required){$('#chat-ready')?.classList.remove('hidden');if(complete){complete.disabled=remaining>0;complete.textContent=remaining>0?`Ready in ${remaining}s`:chatConfig().completion_wording}}else if(complete){complete.disabled=true}return remaining}",
+"function updateChatTimer(){if(!app.chat)return;const total=Math.max(1,Number(chatMinimumSeconds()||45)),required=Math.max(1,Number(chatRequiredReplies()||4)),started=Number(app.chat.startedAt||Date.now()),elapsed=Math.max(0,Math.floor((Date.now()-started)/1000)),remaining=Math.max(0,total-elapsed),fmt=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60)).padStart(2,'0')}`;const timer=$('#chat-timer'),complete=$('#chat-complete');if(timer){timer.textContent=remaining>0?`${fmt(remaining)} remaining`:'00:00 · Ready';timer.dataset.remaining=String(remaining)}if(app.chat.replies.length===required){$('#chat-ready')?.classList.remove('hidden');if(complete){complete.disabled=remaining>0;complete.textContent=remaining>0?`Ready in ${remaining}s`:chatConfig().completion_wording}}else if(complete){complete.disabled=true}return remaining}",
 'chat countdown renderer'
 );
 
@@ -34,3 +34,4 @@ if(!source.includes("document.addEventListener('visibilitychange',()=>{if(!docum
 source=source.replace("const RELEASE='20260802-unified-r1';","const RELEASE='20260802-countdown-r1';");
 fs.writeFileSync(path,source);
 console.log('Guided chat countdown repaired.');
+// trigger
