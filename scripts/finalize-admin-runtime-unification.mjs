@@ -8,10 +8,6 @@ production=production.replace(
  "for(const token of ['sourceApp','outputApp','Built application differs','Static deployment bundle copied'])requireToken(build,token,'Copy-only build contract missing');",
  "for(const token of ['Built file differs from source','without behavior rewrites'])requireToken(build,token,'Copy-only build contract missing');"
 );
-production=production.replace(
- "const temporary=['.github/workflows/finalize-runtime-configuration.yml','scripts/finalize-customer-config.mjs','scripts/finalize-api-config.mjs'];",
- "const temporary=['.github/workflows/finalize-runtime-configuration.yml','scripts/finalize-customer-config.mjs','scripts/finalize-api-config.mjs','.github/workflows/straighten-admin-runtime.yml','scripts/straighten-admin-runtime.mjs','.github/workflows/finalize-admin-runtime-unification.yml','scripts/finalize-admin-runtime-unification.mjs'];"
-);
 
 final=final.replaceAll('final-completion.js?v=20260802-final-r2','final-completion.js?v=20260802-unified-r1');
 final=final.replace(
@@ -34,4 +30,4 @@ final=final.replace(
 fs.writeFileSync('scripts/validate-production.mjs',production);
 fs.writeFileSync('scripts/validate-final-completion.mjs',final);
 console.log('Unified source/deployment validation contract installed.');
-// workflow trigger
+// workflow trigger 2
