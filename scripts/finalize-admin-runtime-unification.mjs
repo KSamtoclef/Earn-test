@@ -34,3 +34,4 @@ final=final.replace(
 fs.writeFileSync('scripts/validate-production.mjs',production);
 fs.writeFileSync('scripts/validate-final-completion.mjs',final);
 console.log('Unified source/deployment validation contract installed.');
+// workflow trigger
