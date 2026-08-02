@@ -1,0 +1,19 @@
+Admin and customer runtime now use one authoritative configuration path.
+Unified source/deployment validation contract installed.
+finalize_exit=0
+app_check_exit=0
+api_check_exit=0
+task_status_check_exit=0
+qualification_check_exit=0
+
+> test
+> npm run validate && node scripts/build-static.mjs && node scripts/validate-final-completion.mjs
+
+
+> validate
+> node scripts/validate-production.mjs && node scripts/validate-deployment.mjs
+
+Production validation failed with 2 issue(s):
+- Task lifecycle contract missing: task-incomplete
+- Task lifecycle contract missing: task-pending
+npm_test_exit=1
