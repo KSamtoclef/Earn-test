@@ -1,0 +1,39 @@
+name: Diagnose Admin runtime unification
+on:
+  push:
+    paths:
+      - scripts/run-admin-unification-diagnostic.txt
+permissions:
+  contents: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run and capture
+        shell: bash
+        run: |
+          set +e
+          : > admin-unification-diagnostic.log
+          node scripts/finalize-admin-runtime-unification.mjs >> admin-unification-diagnostic.log 2>&1
+          echo "finalize_exit=$?" >> admin-unification-diagnostic.log
+          node --check assets/js/app.js >> admin-unification-diagnostic.log 2>&1
+          echo "app_check_exit=$?" >> admin-unification-diagnostic.log
+          node --check assets/js/api.js >> admin-unification-diagnostic.log 2>&1
+          echo "api_check_exit=$?" >> admin-unification-diagnostic.log
+          node --check assets/js/features/task-status.js >> admin-unification-diagnostic.log 2>&1
+          echo "task_status_check_exit=$?" >> admin-unification-diagnostic.log
+          node --check assets/js/features/qualification.js >> admin-unification-diagnostic.log 2>&1
+          echo "qualification_check_exit=$?" >> admin-unification-diagnostic.log
+          npm test >> admin-unification-diagnostic.log 2>&1
+          echo "npm_test_exit=$?" >> admin-unification-diagnostic.log
+      - name: Commit diagnostic
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-unification-diagnostic.log
+          git commit -m "Capture Admin runtime unification diagnostic" || exit 0
+          git push
