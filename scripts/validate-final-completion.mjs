@@ -27,6 +27,9 @@ if(!failures.length){
  for(const token of['nigeria_multiplier','kenya_multiplier','presence_heartbeat_seconds','featuredLimit','qualifying_active_days_count'])requireToken(app,token,'Built customer runtime contract missing');
  requireToken(api,'presence_online_seconds','Built Admin presence contract missing');
  for(const token of['platform_name','support_url','terms_url','privacy_url','maintenance_mode','public_registration','default_country'])requireToken(completion,token,'Completion configuration bridge missing');
+ for(const token of['installRouteObservers','taskObserver','adminObserver','scheduleRouteRefresh'])requireToken(completion,token,'Route-scoped runtime update missing');
+ forbidToken(completion,'observe(document.documentElement','Full-document observer must not return');
+ forbidToken(completion,"attributeFilter:['class','data-route']",'Global class observer must not return');
 
  for(const token of['earnchat_convert_country_amount','referral_required_active_days','referrer_account_days','earnchat_assert_runtime_available','qualifying_active_days_count','20260802-final-completion-r1'])requireToken(finalSql,token,'Final database completion contract missing');
  for(const token of['expires_at','default_attempt_expiry_minutes','get_my_open_task_claim','activity_points','20260802-final-completion-r2'])requireToken(taskSql,token,'Final task runtime contract missing');
@@ -38,4 +41,4 @@ if(failures.length){
  process.exit(1);
 }
 console.log('Earn Chat final completion validation passed.');
-console.log('Verified country-safe first paint, country multipliers, Admin propagation, presence timing, referral conversion, task expiry and final SQL run order.');
+console.log('Verified country-safe first paint, country multipliers, Admin propagation, route-scoped runtime updates, presence timing, referral conversion, task expiry and final SQL run order.');
