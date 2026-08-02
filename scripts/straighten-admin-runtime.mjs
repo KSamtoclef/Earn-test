@@ -47,3 +47,4 @@ if(!runOrder.includes('earnchat_admin_runtime_unification_20260802.sql'))runOrde
 
 fs.writeFileSync('assets/js/app.js',app);fs.writeFileSync('assets/js/api.js',api);fs.writeFileSync('assets/js/features/task-status.js',status);fs.writeFileSync('assets/js/features/qualification.js',qualification);fs.writeFileSync('index.html',index);fs.writeFileSync('scripts/build-static.mjs',build);fs.writeFileSync('supabase/PRODUCTION_RUN_ORDER.md',runOrder);
 console.log('Admin and customer runtime now use one authoritative configuration path.');
+// workflow trigger 20260802
