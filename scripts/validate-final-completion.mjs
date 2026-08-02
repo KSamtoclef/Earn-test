@@ -8,7 +8,7 @@ const forbidToken=(source,token,label)=>{if(source.includes(token))failures.push
 
 for(const file of[
  'public/index.html','public/assets/js/app.js','public/assets/js/api.js','public/assets/js/final-completion.js',
- 'supabase/earnchat_final_completion_20260802.sql','supabase/earnchat_final_task_runtime_20260802.sql','supabase/PRODUCTION_RUN_ORDER.md'
+ 'supabase/earnchat_final_completion_20260802.sql','supabase/earnchat_final_task_runtime_20260802.sql','supabase/earnchat_admin_runtime_unification_20260802.sql','supabase/PRODUCTION_RUN_ORDER.md'
 ])requireFile(file);
 
 if(!failures.length){
@@ -18,9 +18,10 @@ if(!failures.length){
  const completion=read('public/assets/js/final-completion.js');
  const finalSql=read('supabase/earnchat_final_completion_20260802.sql');
  const taskSql=read('supabase/earnchat_final_task_runtime_20260802.sql');
+ const unifiedSql=read('supabase/earnchat_admin_runtime_unification_20260802.sql');
  const runOrder=read('supabase/PRODUCTION_RUN_ORDER.md');
 
- requireToken(html,'final-completion.js?v=20260802-final-r2','Completion runtime is not loaded');
+ requireToken(html,'final-completion.js?v=20260802-unified-r1','Completion runtime is not loaded');
  for(const token of['id="preview-balance">—','id="landing-chat">—','id="home-work">—','id="withdraw-available">—'])requireToken(html,token,'Country-neutral first paint missing');
  forbidToken(html,'id="preview-balance">₦','Kenyan first paint can expose Naira');
 
@@ -33,7 +34,8 @@ if(!failures.length){
 
  for(const token of['earnchat_convert_country_amount','referral_required_active_days','referrer_account_days','earnchat_assert_runtime_available','qualifying_active_days_count','20260802-final-completion-r1'])requireToken(finalSql,token,'Final database completion contract missing');
  for(const token of['expires_at','default_attempt_expiry_minutes','get_my_open_task_claim','activity_points','20260802-final-completion-r2'])requireToken(taskSql,token,'Final task runtime contract missing');
- for(const token of['earnchat_final_completion_20260802.sql','earnchat_final_task_runtime_20260802.sql'])requireToken(runOrder,token,'Final SQL run order missing');
+ for(const token of['admin_update_earnchat_configuration','admin_update_earnchat_business_settings','admin_update_earnchat_kyc_config','fixed_reward_ngn','referral_minimum_ngn','provider_url_ng','configuration_version'])requireToken(unifiedSql,token,'Admin/runtime unification contract missing');
+ for(const token of['earnchat_final_completion_20260802.sql','earnchat_final_task_runtime_20260802.sql','earnchat_admin_runtime_unification_20260802.sql'])requireToken(runOrder,token,'Final SQL run order missing');
 }
 
 if(failures.length){

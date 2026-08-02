@@ -14,8 +14,9 @@ Run these idempotent upgrades in this exact order:
 6. `earnchat_dynamic_operations_contract_20260801.sql`
 7. `earnchat_final_completion_20260802.sql`
 8. `earnchat_final_task_runtime_20260802.sql`
-9. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
-10. `earnchat_production_verify.sql` — read-only production verification
+9. `earnchat_admin_runtime_unification_20260802.sql`
+10. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
+11. `earnchat_production_verify.sql` — read-only production verification
 
 Optional paused starter tasks:
 

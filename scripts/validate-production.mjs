@@ -102,7 +102,7 @@ if(duplicateIds.length)failures.push(`Duplicate HTML IDs: ${duplicateIds.join(',
 for(const token of ['About 2 minutes','00:00 / 02:00','id="public-online"','earn-test-99lc.vercel.app','chat-earn.xyz'])forbidToken(runtime,token,'Stale production content remains');
 
 for(const token of ['app.replace','fs.writeFileSync(appPath'])forbidToken(build,token,'Build script rewrites application behavior');
-for(const token of ['sourceApp','outputApp','Built application differs','Static deployment bundle copied'])requireToken(build,token,'Copy-only build contract missing');
+for(const token of ['Built file differs from source','without behavior rewrites'])requireToken(build,token,'Copy-only build contract missing');
 
 const secretFiles=walk(root).filter(name=>/\.(?:js|mjs|html|json|yml|yaml)$/.test(name)&&!name.includes(`${path.sep}public${path.sep}`)&&path.basename(name)!=='validate-production.mjs');
 const secretPatterns=[/SUPABASE_SERVICE_ROLE\s*=/i,/DATABASE_URL\s*=/i,/postgres(?:ql)?:\/\/[^\s'"`]+/i,/service_role\s*[:=]\s*['"][^'"]+/i];

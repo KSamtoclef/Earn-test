@@ -50,7 +50,19 @@ async function memberState(force=false){
   try{return await request}finally{if(memberPromise===request)memberPromise=null}
 }
 async function businessConfig(force=false){
-  if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS)return configCache;
+  if(!force&&configCache&&Date.now()-configAt<CONFIG_CACHE_MS){
+    if(!configPromise){
+      const previous=configCache?.configuration_version||configCache?.version;
+      const background=rpc('get_earnchat_business_config').then(data=>{
+        const next=data?.configuration_version||data?.version;
+        storeBusinessConfig(data);
+        if(next!==previous)window.dispatchEvent(new CustomEvent('earnchat:config-updated',{detail:{version:next,section:'background',config:data,updated_at:data?.updated_at||data?.settings?.updated_at||null}}));
+        return data;
+      });
+      configPromise=background.finally(()=>{if(configPromise===background)configPromise=null});
+    }
+    return configCache;
+  }
   if(configPromise)return configPromise;
   const request=rpc('get_earnchat_business_config').then(storeBusinessConfig);
   configPromise=request;
@@ -144,7 +156,7 @@ export const api={
  adminUsers:async(limit=50,offset=0)=>unwrap(await select('profiles','id,email,full_name,country,currency,level_name,activity_points,active_days_count,approved_chats_count,approved_tasks_count,task_rejection_count,chat_rejection_count,work_available_balance,work_pending_balance,referral_available_balance,referral_pending_balance,total_withdrawn,kyc_status,security_review_required,fraud_review_status,earning_suspended,is_admin,last_visit_at,account_created_at').order('account_created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminUserControl:async(userId,action,reason)=>mutateAdmin('admin_update_earnchat_user_control',{p_user:userId,p_action:action,p_reason:reason||null}),
  adminBulkUserControl:async(ids,action,reason)=>mutateAdmin('admin_bulk_update_user_control',{p_users:ids,p_action:action,p_reason:reason||null}),
- adminPresence:async()=>unwrap(await select('earnchat_site_presence').gt('last_seen',new Date(Date.now()-90000).toISOString()).order('last_seen',{ascending:false}).limit(100)),
+ adminPresence:async()=>{const seconds=Math.max(30,Number(configCache?.settings?.presence_online_seconds||90));return unwrap(await select('earnchat_site_presence').gt('last_seen',new Date(Date.now()-seconds*1000).toISOString()).order('last_seen',{ascending:false}).limit(100))},
  adminChats:async(limit=50,offset=0)=>unwrap(await select('earnchat_chat_sessions').order('completed_at',{ascending:false}).range(offset,offset+limit-1)),
  adminReverseChat:async(id,reason)=>mutateAdmin('admin_reverse_earnchat_chat',{p_session:id,p_reason:reason||'Administrator reversal'}),
  adminReferrals:async(limit=50,offset=0)=>unwrap(await select('earnchat_referrals').order('signup_at',{ascending:false}).range(offset,offset+limit-1)),
