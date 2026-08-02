@@ -4,7 +4,7 @@ import{COUNTRY_FALLBACK,countryFromStorage,money}from'./app-config.js';
 import{normalizeBusinessConfig,getGeneralConfig,getLandingConfig,getChatConfig,getTaskConfig,getReferralConfig,getWithdrawalConfig,getKycConfig,getFeatureFlags,getPublicOrigin}from'./config-runtime.js';
 import{configureRouter,navigate,resolveRoute}from'./router.js';
 
-const RELEASE='20260802-stability-r2';
+const RELEASE='20260802-kyc-r1';
 const app={session:null,user:null,state:null,profile:null,config:null,country:countryFromStorage(),suggestedCountry:null,taskClaim:null,chat:null,chatTimer:null,presenceTimer:null,explicitLogout:false,authVerifyTimer:null,sessionVerifyPromise:null,lastSessionVerifiedAt:0,adminModule:null};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -85,7 +85,39 @@ async function submitWithdrawal(){clearMessage('#withdraw-message');if(!withdraw
 
 async function renderProfile(){renderAppHeader('Profile','Account, level, KYC and security.');const name=profile().full_name||'Member';$('#profile-avatar').textContent=initials(name);$('#profile-name').textContent=name;$('#profile-email').textContent=profile().email||'';$('#profile-country').textContent=cmeta().name;$('#profile-country-chip').textContent=`${country()==='KE'?'🇰🇪':'🇳🇬'} ${cmeta().name}`;$('#profile-level').textContent=level();$('#profile-kyc').textContent=profile().kyc_status||'not_submitted';$('#profile-currency').textContent=cmeta().currency;$('#admin-entry').classList.toggle('hidden',!profile().is_admin);try{const rows=await api.ledger(profile().id);$('#ledger-list').innerHTML=rows.length?rows.map(r=>`<article class="list-card"><header><div><h3>${esc(r.description||r.source_type)}</h3><p>${new Date(r.created_at).toLocaleString()} · ${esc(r.status)}</p></div><b class="${r.entry_type==='credit'?'reward':''}">${r.entry_type==='credit'?'+':'-'}${format(r.amount)}</b></header></article>`).join(''):'<article class="list-card"><h3>No wallet activity yet</h3><p>Your approved earnings and withdrawals will appear here.</p></article>'}catch{$('#ledger-list').innerHTML='<article class="list-card"><p>Wallet history could not load.</p></article>'}}
 function ensureKycModal(){let modal=$('#kyc-provider-modal');if(modal)return modal;modal=document.createElement('div');modal.id='kyc-provider-modal';modal.className='modal';modal.innerHTML='<div class="modal-sheet"><div class="modal-head"><div><span class="eyebrow">IDENTITY VERIFICATION</span><h2>Verify your account</h2></div><button id="kyc-provider-close" type="button">×</button></div><div id="kyc-provider-message" class="form-message"></div><div id="kyc-provider-content"></div></div>';document.body.appendChild(modal);$('#kyc-provider-close',modal).onclick=()=>modal.classList.remove('show');modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});return modal}
-async function openKycFlow(){const modal=ensureKycModal(),content=$('#kyc-provider-content',modal);clearMessage('#kyc-provider-message');content.innerHTML='<article class="card"><b>Loading verification instructions…</b></article>';modal.classList.add('show');try{const cfg=kycConfig(),local=country()==='KE'?{provider:cfg.provider_ke,url:cfg.provider_url_ke,instructions:cfg.instructions_ke}:{provider:cfg.provider_ng,url:cfg.provider_url_ng,instructions:cfg.instructions_ng},url=safeHttps(local.url),required=cfg.reference_required!==false;if(cfg.enabled===false||featureFlags().kyc===false){content.innerHTML='<article class="card"><h3>Verification is temporarily unavailable</h3><p>Please return later.</p></article>';return}content.innerHTML=`<article class="kyc-provider-card"><span class="tag">${country()==='KE'?'🇰🇪 Kenya':'🇳🇬 Nigeria'}</span><h3>${esc(local.provider||'Approved verification provider')}</h3><p>${esc(local.instructions||'Complete the approved verification steps and return here.')}</p><small>Typical review time: up to ${Number(cfg.review_hours||48)} hours.</small></article>${url?'<button id="kyc-open-provider" class="primary" type="button">Open verification page ↗</button>':'<div class="form-message error show">The administrator has not added a KYC URL for your country yet.</div>'}<div class="field ${required?'':'hidden'}"><label>Verification reference</label><input id="kyc-reference" placeholder="Enter the reference received after verification"></div><button id="kyc-send" class="secondary" type="button" ${url?'':'disabled'}>Submit for review</button>`;if(url)$('#kyc-open-provider',content).onclick=()=>window.open(url.href,'_blank','noopener,noreferrer');$('#kyc-send',content).onclick=async()=>{const ref=$('#kyc-reference',content)?.value.trim()||'';if(required&&!ref)return showMessage('#kyc-provider-message','Enter the verification reference before submitting.');const b=$('#kyc-send',content);b.disabled=true;b.textContent='Submitting…';try{await api.submitKyc(ref,{provider:local.provider||null,country:country(),verification_url:url?.href||null});showMessage('#kyc-provider-message','Verification submitted for review.','ok');await refreshState();renderProfile()}catch(error){showMessage('#kyc-provider-message',error.message||'Verification could not be submitted.');b.disabled=false;b.textContent='Submit for review'}}}catch(error){content.innerHTML=`<div class="form-message error show">${esc(error.message||'KYC configuration could not load.')}</div>`}}
+async function openKycFlow(){
+ const modal=ensureKycModal(),content=$('#kyc-provider-content',modal);
+ clearMessage('#kyc-provider-message');
+ content.innerHTML='<article class="card"><b>Loading verification instructions…</b></article>';
+ modal.classList.add('show');
+ try{
+  const cfg=await api.kycConfig();
+  const local=country()==='KE'?(cfg?.KE||{}):(cfg?.NG||{});
+  const url=safeHttps(local.url);
+  const required=cfg?.reference_required!==false;
+  if(cfg?.enabled===false||featureFlags().kyc===false){
+   content.innerHTML='<article class="card"><h3>Verification is temporarily unavailable</h3><p>Please return later.</p></article>';
+   return;
+  }
+  content.innerHTML=`<article class="kyc-provider-card"><span class="tag">${country()==='KE'?'🇰🇪 Kenya':'🇳🇬 Nigeria'}</span><h3>${esc(local.provider||'Approved verification provider')}</h3><p>${esc(local.instructions||'Complete the approved verification steps and return here.')}</p><small>Typical review time: up to ${Number(cfg?.review_hours||48)} hours.</small></article>${url?'<button id="kyc-open-provider" class="primary" type="button">Verify your KYC now ↗</button>':'<div class="form-message error show">The administrator has not added a KYC URL for your country yet.</div>'}<div class="field"><label>Verification reference${required?'':' (optional)'}</label><input id="kyc-reference" placeholder="${required?'Enter the reference received after verification':'Optional: enter a reference when the provider gives you one'}"></div><button id="kyc-send" class="secondary" type="button" ${url?'':'disabled'}>Submit for review</button>`;
+  if(url)$('#kyc-open-provider',content).onclick=()=>window.open(url.href,'_blank','noopener,noreferrer');
+  $('#kyc-send',content).onclick=async()=>{
+   const ref=$('#kyc-reference',content)?.value.trim()||'';
+   if(required&&!ref)return showMessage('#kyc-provider-message','Enter the verification reference before submitting.');
+   const b=$('#kyc-send',content);b.disabled=true;b.textContent='Submitting…';
+   try{
+    await api.submitKyc(ref,{provider:local.provider||null,country:country(),verification_url:url?.href||null});
+    showMessage('#kyc-provider-message','Verification submitted for review.','ok');
+    await refreshState();renderProfile();
+   }catch(error){
+    showMessage('#kyc-provider-message',error.message||'Verification could not be submitted.');
+    b.disabled=false;b.textContent='Submit for review';
+   }
+  };
+ }catch(error){
+  content.innerHTML=`<div class="form-message error show">${esc(error.message||'KYC configuration could not load.')}</div>`;
+ }
+}
 
 function openTour(){const modal=$('#tour-modal'),sheet=$('.modal-sheet',modal);sheet.className='modal-sheet compact-onboarding';sheet.innerHTML='<span class="eyebrow">START HERE</span><h2>Begin with one activity</h2><p>Your dashboard already shows today’s limits and next action.</p><div class="onboard-list"><div class="onboard-item"><i>1</i><div><b>Open Earn</b><small>See guided chats available today.</small></div></div><div class="onboard-item"><i>2</i><div><b>Complete one chat</b><small>Use a suggestion or write your own reply.</small></div></div><div class="onboard-item"><i>3</i><div><b>Explore tasks</b><small>Every external activity shows a guide first.</small></div></div></div><div class="onboard-actions"><button id="tour-skip" class="text-link" type="button">Close</button><button id="tour-next" class="primary" type="button">Open Earn</button></div>';const close=()=>{localStorage.setItem('earnchat-tour-complete','1');modal.classList.remove('show')};$('#tour-skip',sheet).onclick=close;$('#tour-next',sheet).onclick=()=>{close();navigate('earn')};modal.classList.add('show')}
 async function refreshState(){if(!loggedIn())return;const data=await api.state();if(!data?.profile)throw new Error('Your secure profile could not be loaded.');app.state=data;app.profile=data.profile;app.config=normalizeBusinessConfig(data.config||app.config||{});app.country=app.profile.country||app.country;localStorage.setItem('earnchat-country',app.country)}
