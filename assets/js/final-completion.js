@@ -7,7 +7,7 @@ const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
 const protectedRoutes=new Set(['home','earn','chat','tasks','visits','upgrade','referrals','withdraw','profile']);
 const routeFlags={earn:'guided_chat',chat:'guided_chat',tasks:'tasks',visits:'sponsored_visits',upgrade:'upgrade',referrals:'referrals',withdraw:'withdrawals'};
 let config=normalizeBusinessConfig(readCachedConfig());
-let scheduled=false;
+let scheduled=false,taskObserver=null,adminObserver=null;
 
 function readCachedConfig(){
  try{return JSON.parse(localStorage.getItem(CONFIG_KEY)||'null')?.data||{}}catch{return{}}
@@ -82,12 +82,29 @@ function maintenanceRouteGuard(){
  if(!notice){notice=document.createElement('div');notice.id='runtime-maintenance';notice.className='runtime-maintenance';document.body.append(notice)}
  notice.innerHTML=`<div><span class="eyebrow">TEMPORARILY UNAVAILABLE</span><h2>${config.general.platform_name||'Earn Chat'} maintenance</h2><p>${config.general.maintenance_message}</p><button type="button" data-go="landing" class="primary">Return to homepage</button></div>`;
 }
+function disconnectRouteObservers(){
+ taskObserver?.disconnect();taskObserver=null;
+ adminObserver?.disconnect();adminObserver=null;
+}
+function installRouteObservers(){
+ disconnectRouteObservers();
+ const route=document.body.dataset.route||location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
+ if(route==='tasks'||route==='visits'){
+  const host=route==='visits'?$('#visit-list'):$('#task-list');
+  if(host){taskObserver=new MutationObserver(applyTaskPresentation);taskObserver.observe(host,{childList:true,subtree:true})}
+ }
+ if(route==='admin'){
+  const host=$('#admin-content');
+  if(host){adminObserver=new MutationObserver(enforceFixedAdminRules);adminObserver.observe(host,{childList:true,subtree:true})}
+ }
+}
 function applyAll(){
  scheduled=false;
- applyBranding();ensureRuntimeLinks();applyFeatureVisibility();enforceFixedAdminRules();applyTaskPresentation();maintenanceRouteGuard();
+ applyBranding();ensureRuntimeLinks();applyFeatureVisibility();enforceFixedAdminRules();applyTaskPresentation();maintenanceRouteGuard();installRouteObservers();
  document.documentElement.style.setProperty('--runtime-presence-heartbeat',String(Math.max(15,Number(config.settings?.presence_heartbeat_seconds||60))));
 }
 function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(applyAll)}
+function scheduleRouteRefresh(){schedule();setTimeout(schedule,180);setTimeout(schedule,700)}
 function installStyles(){
  const style=document.createElement('style');
  style.textContent='.runtime-policy-links{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;padding:1.25rem 0 6rem}.runtime-policy-links a,.runtime-profile-links a{font-weight:800;text-decoration:none}.runtime-profile-links{display:grid;gap:.7rem}.runtime-maintenance{position:fixed;inset:0;z-index:9999;background:rgba(238,246,255,.96);display:grid;place-items:center;padding:1.5rem}.runtime-maintenance>div{width:min(480px,100%);background:#fff;border:1px solid #cbdced;border-radius:28px;padding:2rem;box-shadow:0 22px 60px rgba(10,39,79,.18)}';
@@ -95,12 +112,12 @@ function installStyles(){
 }
 
 prepareCountry();neutralizeFirstPaint();installStyles();
-new MutationObserver(schedule).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','data-route']});
-window.addEventListener('hashchange',schedule);
-window.addEventListener('earnchat:config-updated',event=>{if(event.detail?.config)config=normalizeBusinessConfig(event.detail.config);schedule()});
-window.addEventListener('earnchat:member-state',event=>{if(event.detail?.config)config=normalizeBusinessConfig(event.detail.config);schedule()});
+window.addEventListener('hashchange',scheduleRouteRefresh,{passive:true});
+window.addEventListener('pageshow',scheduleRouteRefresh,{passive:true});
+window.addEventListener('earnchat:config-updated',event=>{if(event.detail?.config)config=normalizeBusinessConfig(event.detail.config);scheduleRouteRefresh()});
+window.addEventListener('earnchat:member-state',event=>{if(event.detail?.config)config=normalizeBusinessConfig(event.detail.config);scheduleRouteRefresh()});
 
-document.addEventListener('DOMContentLoaded',schedule,{once:true});
+document.addEventListener('DOMContentLoaded',scheduleRouteRefresh,{once:true});
 void api.business().then(fresh=>{
  const previous=localStorage.getItem('earnchat-country');
  config=normalizeBusinessConfig(fresh);
@@ -111,5 +128,5 @@ void api.business().then(fresh=>{
   sessionStorage.setItem('earnchat-default-country-applied','1');
   location.reload();return;
  }
- schedule();
-}).catch(schedule);
+ scheduleRouteRefresh();
+}).catch(scheduleRouteRefresh);
