@@ -15,7 +15,7 @@ const assetCache=cacheValue(assetRule);
 if(!/max-age=0/i.test(assetCache)||!/must-revalidate|no-cache/i.test(assetCache)||/immutable/i.test(assetCache))fail.push('Unhashed application assets must revalidate and must not use immutable caching.');
 if(!String(pkg.scripts?.build||'').includes('build-static.mjs'))fail.push('The package build command must create the static bundle.');
 if(!build.includes("path.join(root,'public')"))fail.push('The static build must write to public.');
-if(!build.includes('sourceApp!==outputApp'))fail.push('The static build must verify source/output equality.');
+if(!build.includes('Built file differs from source'))fail.push('The static build must verify source/output equality.');
 
 if(fail.length){console.error(`Deployment validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat deployment configuration validation passed.');
