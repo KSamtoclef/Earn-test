@@ -2,7 +2,7 @@
 
 Back up the Supabase database before running production SQL.
 
-## Existing database used for the current live test
+## Existing database used for the current live site
 
 Run these idempotent upgrades in this exact order:
 
@@ -12,42 +12,45 @@ Run these idempotent upgrades in this exact order:
 4. `earnchat_dynamic_chat_contract_20260801.sql`
 5. `earnchat_task_restart_contract_20260801.sql`
 6. `earnchat_dynamic_operations_contract_20260801.sql`
-7. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
-8. `earnchat_production_verify.sql` — read-only production verification
+7. `earnchat_final_completion_20260802.sql`
+8. `earnchat_final_task_runtime_20260802.sql`
+9. `earnchat_configuration_control_verify_20260801.sql` — read-only configuration and duplicate-credit checks
+10. `earnchat_production_verify.sql` — read-only production verification
 
 Optional paused starter tasks:
 
-9. `earnchat_starter_tasks_seed.sql`
+11. `earnchat_starter_tasks_seed.sql`
 
-The 2026-08-01 upgrades are required for the Admin-driven configuration and accurate activity lifecycle. They add:
+The final 2026-08-02 completion migrations add:
 
-- configuration versioning;
-- validated configuration sections;
-- Admin-only mutation RPCs;
-- configuration audit logging;
-- dynamic guided-chat duration;
-- dynamic reply count;
-- dynamic minimum reply length;
-- dynamic attempt expiry;
+- authoritative NGN/KES profile consistency;
+- correct cross-country referral commission conversion;
+- configurable referral active-day qualification;
+- configurable referrer account-age qualification;
+- server enforcement for maintenance mode and feature flags;
+- guarded customer RPCs that cannot bypass disabled features;
+- configurable task-attempt expiry;
+- authoritative expiry and restart handling;
 - dynamic guided-chat Activity Points;
-- one server/client guided-chat contract;
-- authoritative expiration of incomplete task attempts;
-- restart-required task behavior without duplicate open claims;
-- server-enforced withdrawal availability and payout-method flags;
-- configurable maximum open withdrawal requests;
-- server-enforced KYC availability and reference requirements.
+- country-safe withdrawal and earning calculations.
 
-Do not expose the new Admin configuration controls before steps 3 through 6 have succeeded. The customer runtime uses safe fallbacks, but configurable rules become authoritative only after the database functions are installed.
+The customer runtime additionally applies:
 
-The base production version remains:
+- country-neutral first paint, preventing a Kenyan user from seeing temporary Naira figures;
+- configured Nigeria and Kenya multipliers on every displayed base reward;
+- configured presence timing;
+- configured featured-task limits;
+- dynamic referral progress counts;
+- configured platform identity, support, Terms and Privacy links;
+- customer navigation controlled by feature flags;
+- a full maintenance screen for protected customer routes.
+
+Do not expose the Admin configuration controls until steps 3 through 8 have succeeded. The browser has safe fallbacks, but monetary, qualification, maintenance and security rules become authoritative only after the database functions are installed.
+
+The final configuration row should show:
 
 ```text
-20260731-production-complete-r1
-```
-
-The configuration row must additionally show:
-
-```text
+version = 20260802-final-completion-r2
 configuration_version >= 1
 ```
 
@@ -61,8 +64,10 @@ Verification requirements:
 - every duplicate open task-claim count is `0`;
 - the public configuration contains no `updated_by` field;
 - guided-chat start, resume and completion return the configured contract;
-- incomplete task claims can be expired only by their owner or an authorized server action;
+- incomplete task claims expire using the configured timeout;
 - restarting an incomplete task does not create duplicate credit;
+- disabled customer features are rejected by the server;
+- maintenance mode blocks protected earning operations;
 - disabled withdrawal methods are rejected by the server;
 - the configured maximum open withdrawal count is enforced;
 - disabled KYC and missing required references are rejected by the server;
@@ -71,6 +76,8 @@ Verification requirements:
 - every object row in the original production verification shows `exists = true`;
 - every original `problem_count` row shows `0`;
 - signup bonuses remain present exactly once and use the correct country amount;
+- Kenyan profiles use `KE` and `KES`; Nigerian profiles use `NG` and `NGN`;
+- cross-country referral commissions are converted through the configured country multipliers;
 - Activity Points match the point-event ledger;
 - no duplicate direct-referral commission exists;
 - Admin overview contains country-separated liabilities and suspicious-account totals.
@@ -86,10 +93,10 @@ Run:
 5. `earnchat_dynamic_chat_contract_20260801.sql`
 6. `earnchat_task_restart_contract_20260801.sql`
 7. `earnchat_dynamic_operations_contract_20260801.sql`
-8. `earnchat_configuration_control_verify_20260801.sql`
-9. `earnchat_production_verify.sql`
-
-The installer creates the base production schema. The later upgrades apply KYC/recovery, bonuses, points, direct commissions, earned levels, versioned Admin configuration, the dynamic guided-chat contract, authoritative task restart, and server-enforced withdrawal/KYC settings.
+8. `earnchat_final_completion_20260802.sql`
+9. `earnchat_final_task_runtime_20260802.sql`
+10. `earnchat_configuration_control_verify_20260801.sql`
+11. `earnchat_production_verify.sql`
 
 Do not run removed certification migrations or older multi-file production packages.
 
