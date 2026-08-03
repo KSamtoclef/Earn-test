@@ -1,0 +1,36 @@
+name: Full site audit
+on:
+  push:
+    paths:
+      - scripts/full-site-audit.mjs
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run complete audit
+        shell: bash
+        run: |
+          set +e
+          : > full-site-audit.log
+          find assets/js -type f -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file" >> full-site-audit.log 2>&1
+            code=$?
+            echo "syntax:$file=$code" >> full-site-audit.log
+          done
+          node scripts/full-site-audit.mjs >> full-site-audit.log 2>&1
+          echo "static_audit_exit=$?" >> full-site-audit.log
+          npm test >> full-site-audit.log 2>&1
+          echo "npm_test_exit=$?" >> full-site-audit.log
+      - name: Commit audit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add full-site-audit.log
+          git commit -m "Capture full-site audit report"
+          git push
