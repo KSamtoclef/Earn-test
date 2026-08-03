@@ -82,3 +82,4 @@ console.log(`Checked ${ids.length} DOM ids, ${referenced.length} direct app elem
 if(warnings.length)console.log(`WARNINGS (${warnings.length}):\n- ${warnings.join('\n- ')}`);
 if(failures.length){console.error(`FAILURES (${failures.length}):\n- ${failures.join('\n- ')}`);process.exit(1)}
 console.log('Full-site static audit passed.');
+// trigger 2026-08-03
