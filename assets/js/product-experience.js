@@ -48,9 +48,10 @@ function ensureActivityGuide(containerId,type){
 
 function enrichTaskCards(host,type){
  for(const card of host.querySelectorAll('.list-card')){
-  if(card.dataset.experienceReady)return;card.dataset.experienceReady='1';
+  if(card.dataset.experienceReady)continue;
   const tags=[...card.querySelectorAll('.tag')].map(x=>x.textContent.trim()).filter(Boolean);
-  if(!tags.length)return;
+  card.dataset.experienceReady='1';
+  if(!tags.length)continue;
   const meta=document.createElement('div');meta.className='experience-meta';
   meta.innerHTML=tags.slice(0,3).map(x=>`<span>${esc(x)}</span>`).join('')+`<span>${type==='visit'?'Sponsored visit':'Reviewed task'}</span>`;
   const guide=card.querySelector('.guide');if(guide)guide.insertAdjacentElement('beforebegin',meta);else card.appendChild(meta);
@@ -58,12 +59,12 @@ function enrichTaskCards(host,type){
 }
 
 function referralClarity(){
- const field=$('#view-referrals .field');if(!field||$('#referral-explainer'))return;
+ const field=$('#view-referrals .field');if(!field)return;
  const cfg=currentConfig?.referrals||currentConfig?.configuration?.referrals||{};
  const days=Number(cfg.qualifying_active_days_count||cfg.required_active_days||2);
- const box=document.createElement('section');box.id='referral-explainer';box.className='referral-explainer';
+ let box=$('#referral-explainer');
+ if(!box){box=document.createElement('section');box.id='referral-explainer';box.className='referral-explainer';field.insertAdjacentElement('beforebegin',box)}
  box.innerHTML=`<h3>How a referral becomes qualified</h3><p>Your link records the signup, but rewards are released only after genuine activity.</p><div class="referral-steps"><span>The member creates an account through your link</span><span>The member completes approved activity on ${days} active day${days===1?'':'s'}</span><span>The server confirms qualification and credits the correct country reward</span></div>`;
- field.insertAdjacentElement('beforebegin',box);
 }
 
 function upgradeClarity(){
