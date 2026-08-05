@@ -21,7 +21,9 @@ if(!failures.length){
  const unifiedSql=read('supabase/earnchat_admin_runtime_unification_20260802.sql');
  const runOrder=read('supabase/PRODUCTION_RUN_ORDER.md');
 
- requireToken(html,'final-completion.js?v=20260802-unified-r1','Completion runtime is not loaded');
+ requireToken(html,'final-completion.js?v=20260805-experience-r1','Completion runtime is not loaded');
+ requireToken(html,'product-experience.js?v=20260805-experience-r1','Product experience runtime is not loaded');
+ requireToken(html,'product-experience.css?v=20260805-experience-r1','Product experience stylesheet is not loaded');
  for(const token of['id="preview-balance">—','id="landing-chat">—','id="home-work">—','id="withdraw-available">—'])requireToken(html,token,'Country-neutral first paint missing');
  forbidToken(html,'id="preview-balance">₦','Kenyan first paint can expose Naira');
 
