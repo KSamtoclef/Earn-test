@@ -1,0 +1,28 @@
+name: Apply Admin UX r2
+on:
+  push:
+    paths:
+      - scripts/run-admin-ux-r2-20260809.txt
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/apply-admin-ux-r2-20260809.mjs
+      - name: Syntax checks
+        run: |
+          find assets/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Production validation
+        run: npm test
+      - name: Commit Admin UX r2
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "4189824+github-actions[bot]@users.noreply.github.com"
+          git add index.html package.json assets/js/app.js assets/js/admin/admin.js assets/js/admin/admin-experience.js assets/css/admin-experience.css scripts/validate-final-completion.mjs scripts/validate-product-experience.mjs scripts/validate-admin-experience.mjs
+          git commit -m "Complete responsive Admin workspace UX"
+          git push
