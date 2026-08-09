@@ -1,0 +1,37 @@
+name: Apply 2026-08-09 controls and desktop repair
+on:
+  push:
+    paths:
+      - scripts/run-controls-desktop-20260809.txt
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/apply-controls-desktop-20260809.mjs
+      - name: Syntax checks
+        run: |
+          find assets/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Production validation
+        run: npm test
+      - name: Focused regression checks
+        run: |
+          grep -q "minimum_seconds,45,0,900" assets/js/config-runtime.js
+          grep -q "Set 0 to remove the waiting requirement" assets/js/admin/configuration.js
+          grep -q "No wait · Ready" assets/js/app.js
+          grep -q "setInterval" assets/js/app.js
+          grep -q "status!=='ended'" assets/js/admin/core.js
+          grep -q "repeat(3,minmax(0,1fr))" assets/css/product-experience.css
+          grep -q "earnchat_chat_timing_controls_20260809.sql" supabase/PRODUCTION_RUN_ORDER.md
+      - name: Commit repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets/js/app.js assets/js/config-runtime.js assets/js/admin/configuration.js assets/js/admin/core.js assets/css/product-experience.css scripts/validate-final-completion.mjs scripts/validate-product-experience.mjs supabase/PRODUCTION_RUN_ORDER.md
+          git commit -m "Repair desktop tasks, task removal and guided chat timing"
+          git push
