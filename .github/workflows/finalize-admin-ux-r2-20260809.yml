@@ -1,0 +1,40 @@
+name: Finalize Admin UX r2
+on:
+  push:
+    paths:
+      - scripts/run-finalize-admin-ux-r2-20260809.txt
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Align test validation
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='package.json';
+          const j=JSON.parse(fs.readFileSync(p,'utf8'));
+          if(!j.scripts.test.includes('validate-admin-experience.mjs')) j.scripts.test+=' && node scripts/validate-admin-experience.mjs';
+          fs.writeFileSync(p,JSON.stringify(j,null,2)+'\n');
+          NODE
+      - name: Full validation
+        run: |
+          find assets/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          npm test
+          npm run build
+      - name: Remove one-time repair files
+        run: |
+          git rm -f .github/workflows/apply-admin-ux-r2-20260809.yml scripts/apply-admin-ux-r2-20260809.mjs scripts/run-admin-ux-r2-20260809.txt
+          git rm -f .github/workflows/finalize-admin-ux-r2-20260809.yml scripts/run-finalize-admin-ux-r2-20260809.txt
+      - name: Commit final clean state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "4189824+github-actions[bot]@users.noreply.github.com"
+          git add package.json scripts/validate-admin-experience.mjs
+          git commit -am "Finalize Admin UX validation and cleanup"
+          git push
