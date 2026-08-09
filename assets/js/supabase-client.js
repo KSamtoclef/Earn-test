@@ -1,6 +1,6 @@
 import{SUPABASE_URL,SUPABASE_ANON_KEY}from'./app-config.js';
 
-export const RELEASE_VERSION='20260802-stability-r2';
+export const RELEASE_VERSION='20260809-visits-only-r1';
 const stylePromises=new Map(),modulePromises=new Map();
 
 function loadStyle(href,key){
