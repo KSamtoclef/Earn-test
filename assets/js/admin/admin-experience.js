@@ -28,6 +28,8 @@ function updateToolbar(){
  if(current)current.textContent=labels[tab]||'Administrator';
  const back=toolbar.querySelector('[data-admin-back]');
  if(back)back.disabled=readHistory().length===0;
+ const taskActions=toolbar.querySelector('[data-admin-task-actions]');
+ if(taskActions)taskActions.classList.toggle('hidden',tab!=='tasks');
 }
 function goTab(tab,{fromBack=false}={}){
  const button=document.querySelector(`#admin-tabs [data-tab="${CSS.escape(tab)}"]`);
@@ -52,7 +54,7 @@ function ensureStyles(){
  const link=document.createElement('link');
  link.id=STYLE_ID;
  link.rel='stylesheet';
- link.href='./assets/css/admin-experience.css?v=20260809-adminux-r1';
+ link.href='./assets/css/admin-experience.css?v=20260809-adminux-r2';
  document.head.appendChild(link);
 }
 function ensureToolbar(){
@@ -65,10 +67,12 @@ function ensureToolbar(){
   toolbar=document.createElement('div');
   toolbar.id=TOOLBAR_ID;
   toolbar.className='admin-workspace-toolbar';
-  toolbar.innerHTML='<button class="secondary admin-history-back" data-admin-back type="button">← Back</button><button class="secondary admin-overview-button" data-admin-overview type="button">⌂ Overview</button><div class="admin-breadcrumb"><small>ADMIN SECTION</small><b data-admin-current>Overview</b></div>';
+  toolbar.innerHTML='<button class="secondary admin-history-back" data-admin-back type="button">← Back</button><button class="secondary admin-overview-button" data-admin-overview type="button">⌂ Overview</button><div class="admin-breadcrumb"><small>ADMIN SECTION</small><b data-admin-current>Overview</b></div><div class="admin-context-actions hidden" data-admin-task-actions><button class="secondary" data-admin-new-task type="button">＋ New task</button><button class="secondary" data-admin-current-tasks type="button">Current tasks ↓</button></div>';
   header.appendChild(toolbar);
   toolbar.querySelector('[data-admin-back]').addEventListener('click',goBack);
   toolbar.querySelector('[data-admin-overview]').addEventListener('click',()=>{const tab=currentTab();if(tab!=='overview')pushHistory(tab);goTab('overview',{fromBack:true})});
+  toolbar.querySelector('[data-admin-new-task]').addEventListener('click',()=>document.querySelector('#view-admin #task-form')?.scrollIntoView({block:'start',behavior:'smooth'}));
+  toolbar.querySelector('[data-admin-current-tasks]').addEventListener('click',()=>document.querySelector('#view-admin #task-admin-list')?.scrollIntoView({block:'start',behavior:'smooth'}));
  }
  updateToolbar();
 }

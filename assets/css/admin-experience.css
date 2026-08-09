@@ -77,3 +77,15 @@
  #view-admin .bulk-toolbar span{grid-column:1/-1;width:auto!important}
  #view-admin .bulk-toolbar button{width:100%!important}
 }
+
+
+/* Admin UX r2: route isolation and task navigation. */
+body.admin-active .bottom-nav{display:none!important}
+body.admin-active{overflow-x:hidden}
+.admin-context-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.admin-context-actions.hidden{display:none!important}
+.admin-context-actions .secondary{width:auto}
+#view-admin #task-form,#view-admin #task-admin-list{scroll-margin-top:18px}
+@media(min-width:1200px){.admin-workspace-toolbar{grid-template-columns:auto auto minmax(150px,1fr) auto}.admin-context-actions{grid-column:auto}}
+@media(min-width:701px) and (max-width:1199px){.admin-workspace-toolbar{grid-template-columns:auto auto minmax(0,1fr)}.admin-context-actions{grid-column:1/-1;justify-content:flex-start}}
+@media(max-width:700px){.admin-context-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;width:100%}.admin-context-actions .secondary{width:100%}}
