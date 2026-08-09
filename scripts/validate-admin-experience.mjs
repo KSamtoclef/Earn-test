@@ -3,7 +3,7 @@ const read=p=>fs.readFileSync(p,'utf8');
 const app=read('assets/js/app.js'),api=read('assets/js/api.js'),admin=read('assets/js/admin/admin.js'),core=read('assets/js/admin/core.js'),ux=read('assets/js/admin/admin-experience.js'),css=read('assets/css/admin-experience.css'),html=read('index.html');
 const checks=[
  ['admin route state',app.includes("classList.toggle('admin-active',name==='admin')")],
- ['admin enhancer wired',admin.includes('enhanceAdminExperience')&&admin.includes('adminux-r2')],
+ ['admin enhancer wired',admin.includes('enhanceAdminExperience')&&admin.includes('adminux-r3')],
  ['admin back',ux.includes('data-admin-back')&&ux.includes('goBack')],
  ['admin overview',ux.includes('data-admin-overview')],
  ['analytics removed without duplicates',!core.includes("'analytics'")&&!core.includes("analytics:'Analytics'")&&!ux.includes("analytics:'Analytics'")&&!api.includes('adminAnalytics')],
