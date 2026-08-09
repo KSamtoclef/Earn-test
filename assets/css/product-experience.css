@@ -148,3 +148,24 @@
 }
 
 @media(prefers-reduced-motion:reduce){#task-list .list-card,#visit-list .list-card{transition:none}}
+
+
+/* 2026-08-09 desktop task and Admin workspace refinement */
+@media(min-width:1000px){
+ #view-tasks>.container,#view-visits>.container{max-width:1320px}
+ #view-tasks .activity-guide,#view-visits .activity-guide{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.28fr);align-items:center;gap:22px;padding:24px 28px;border-radius:24px}
+ #view-tasks .activity-guide-grid,#view-visits .activity-guide-grid{margin:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+ #task-list,#visit-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+ #task-list .list-card,#visit-list .list-card{min-height:250px;padding:20px;border-radius:22px;display:flex;flex-direction:column;box-shadow:0 14px 34px rgba(28,65,119,.08)}
+ #task-list .list-card:hover,#visit-list .list-card:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(28,65,119,.13)}
+ #task-list .list-card .primary,#visit-list .list-card .primary{margin-top:auto}
+ #view-admin .admin-task-layout{grid-template-columns:minmax(0,1.55fr) minmax(360px,.65fr);gap:26px}
+ #view-admin .admin-task-layout>.card{padding:26px;border-radius:24px}
+ #view-admin #task-form>.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px}
+ #view-admin #task-admin-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+ #view-admin #task-admin-list .list-card{height:100%;display:flex;flex-direction:column}
+ #view-admin #task-admin-list .quick-grid{margin-top:auto;grid-template-columns:repeat(3,minmax(0,1fr))}
+ #view-admin .task-preview-panel{border:1px solid #d9e6f3;background:linear-gradient(180deg,#fff,#f6faff);box-shadow:0 18px 45px rgba(28,65,119,.10)}
+}
+@media(min-width:1500px){#task-list,#visit-list{grid-template-columns:repeat(3,minmax(0,1fr))}#view-admin #task-admin-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1000px) and (max-width:1180px){#task-list,#visit-list{grid-template-columns:repeat(2,minmax(0,1fr))}#view-admin #task-form>.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

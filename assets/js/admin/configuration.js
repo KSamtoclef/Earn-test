@@ -56,7 +56,7 @@ function landingForm(config){const c=config.landing;return section('landing','La
 function chatForm(config){const c=config.chat;return section('chat','Guided Chat','Timing, reply quality, recovery, prompts and partners.',`
  ${check('enabled','Guided Chat enabled',c.enabled)}
  <div class="quick-grid">
-  ${input('minimum_seconds','Minimum seconds',c.minimum_seconds,{type:'number',min:30,max:900,required:true})}
+  ${input('minimum_seconds','Minimum seconds',c.minimum_seconds,{type:'number',min:0,max:900,required:true,help:'Set 0 to remove the waiting requirement. Values from 1 to 900 seconds are allowed.'})}
   ${input('required_replies','Required replies',c.required_replies,{type:'number',min:1,max:10,required:true})}
   ${input('minimum_reply_length','Minimum reply length',c.minimum_reply_length,{type:'number',min:1,max:500,required:true})}
   ${input('attempt_expiry_minutes','Attempt expiry minutes',c.attempt_expiry_minutes,{type:'number',min:5,max:1440,required:true})}

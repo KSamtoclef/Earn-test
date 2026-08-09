@@ -138,7 +138,7 @@ export function normalizeBusinessConfig(raw={}){
     },
     chat:{
       enabled:boolean(chatRaw.enabled,true),
-      minimum_seconds:integer(chatRaw.minimum_seconds,45,30,900),
+      minimum_seconds:integer(chatRaw.minimum_seconds,45,0,900),
       required_replies:integer(chatRaw.required_replies,4,1,10),
       minimum_reply_length:integer(chatRaw.minimum_reply_length,12,1,500),
       attempt_expiry_minutes:integer(chatRaw.attempt_expiry_minutes,30,5,1440),
