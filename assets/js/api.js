@@ -170,7 +170,6 @@ export const api={
  adminFeedback:async(limit=50,offset=0)=>unwrap(await select('earnchat_member_feedback').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminSaveFeedback:async(id,quote,country,verified,visible)=>mutateAdmin('admin_upsert_earnchat_feedback',{p_id:id||null,p_quote:quote,p_country:country,p_verified:!!verified,p_visible:!!visible}),
  adminAudit:async(limit=50,offset=0)=>unwrap(await select('earnchat_admin_audit').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
- adminAnalytics:async(limit=50,offset=0)=>unwrap(await select('earnchat_analytics_events').order('created_at',{ascending:false}).range(offset,offset+limit-1)),
  adminUpdateConfiguration:async(section,payload)=>mutateAdmin('admin_update_earnchat_configuration',{p_section:section,p_payload:payload},{config:true,member:true,section,event:'earnchat:admin-config-saved'}),
  adminUpdateBusiness:async payload=>mutateAdmin('admin_update_earnchat_business_settings',{p_payload:payload},{config:true,member:true,section:'business',event:'earnchat:admin-config-saved'}),
  adminUpdateLevel:async(level,payload)=>mutateAdmin('admin_update_earnchat_level',{p_level:level,p_payload:payload},{config:true,member:true,section:'levels',event:'earnchat:admin-config-saved'}),
