@@ -1,0 +1,79 @@
+/* Earn Chat Admin workspace responsiveness. Presentation only; no server contracts are changed. */
+#view-admin{overflow:visible!important}
+#view-admin>.container{max-width:none!important}
+#view-admin .admin-layout,#view-admin #admin-content{min-width:0;overflow:visible}
+#view-admin .app-header{position:relative!important;top:auto!important;z-index:6;display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding-bottom:14px}
+#view-admin .app-header>div:first-child{margin-right:auto}
+#view-admin .admin-exit-button{width:auto;min-height:44px;white-space:nowrap}
+.admin-workspace-toolbar{width:100%;display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:9px;align-items:center;padding:10px 0 2px;border-top:1px solid #dce6ef}
+.admin-workspace-toolbar .secondary{width:auto;min-height:43px;padding:9px 13px;white-space:nowrap}
+.admin-workspace-toolbar .secondary:disabled{opacity:.45}
+.admin-breadcrumb{min-width:0;display:grid;gap:2px;padding:4px 10px}
+.admin-breadcrumb small{font-size:10px;font-weight:900;letter-spacing:.11em;color:#76859a}
+.admin-breadcrumb b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#10243a}
+
+#view-admin .admin-nav{position:relative!important;top:auto!important;overflow-x:auto!important;overflow-y:hidden;padding:8px 2px 14px;scrollbar-width:thin;overscroll-behavior-inline:contain}
+#view-admin .admin-nav button{min-height:42px;touch-action:manipulation}
+#view-admin .bulk-toolbar{position:relative!important;top:auto!important;z-index:2!important}
+#view-admin .task-preview-panel{position:relative!important;top:auto!important;max-height:none!important;overflow:visible!important}
+#view-admin .table-wrap{overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
+#view-admin table{white-space:normal}
+#view-admin td,#view-admin th{vertical-align:top}
+
+#view-admin #task-admin-list .list-card{min-width:0}
+#view-admin #task-admin-list .list-card header{align-items:flex-start}
+#view-admin #task-admin-list .quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#view-admin #task-admin-list .quick-grid button{min-width:0;width:100%;min-height:44px;padding:9px 8px;white-space:normal;line-height:1.2}
+#view-admin #task-form{min-width:0}
+#view-admin #task-form input,#view-admin #task-form select,#view-admin #task-form textarea{min-width:0}
+
+@media(min-width:1200px){
+ #view-admin{padding-left:128px!important;padding-right:32px!important}
+ #view-admin>.container,#view-admin .container{width:min(100%,1500px)!important;max-width:1500px!important;margin-inline:auto}
+ #view-admin .admin-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:start}
+ #view-admin .admin-nav{display:grid!important;grid-template-columns:1fr;gap:6px;overflow:visible!important;padding:8px;position:relative!important;border:1px solid #dbe5f0;border-radius:20px;background:#fff;box-shadow:0 10px 26px rgba(28,65,119,.06)}
+ #view-admin .admin-nav button{width:100%;text-align:left;justify-content:flex-start;padding:10px 12px}
+ #view-admin #admin-content{min-width:0}
+ #view-admin .admin-mobile-select{display:none!important}
+ #view-admin .admin-task-layout{grid-template-columns:minmax(0,1.45fr) minmax(320px,.55fr)!important;gap:22px!important}
+ #view-admin #task-form>.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ #view-admin #task-admin-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+@media(min-width:1500px){
+ #view-admin>.container,#view-admin .container{width:min(100%,1600px)!important;max-width:1600px!important}
+ #view-admin .admin-layout{grid-template-columns:235px minmax(0,1fr);gap:26px}
+ #view-admin #task-admin-list{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(min-width:701px) and (max-width:1199px){
+ #view-admin{padding-left:22px!important;padding-right:22px!important}
+ #view-admin>.container,#view-admin .container{width:100%!important;max-width:1100px!important}
+ #view-admin .admin-nav{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important}
+ #view-admin .admin-task-layout,#view-admin .admin-two-column{grid-template-columns:1fr!important}
+ #view-admin .task-preview-panel{order:-1}
+ #view-admin #task-form>.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #view-admin #task-admin-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+
+@media(max-width:700px){
+ #view-admin{padding:12px 12px 92px!important}
+ #view-admin>.container,#view-admin .container{width:100%!important;max-width:none!important}
+ #view-admin .app-header{align-items:flex-start}
+ #view-admin .app-header>div:first-child{width:100%}
+ #view-admin .admin-exit-button{width:100%}
+ .admin-workspace-toolbar{grid-template-columns:1fr 1fr}
+ .admin-workspace-toolbar .secondary{width:100%}
+ .admin-breadcrumb{grid-column:1/-1;padding:4px 2px 0}
+ #view-admin .admin-mobile-select{display:grid!important;position:relative!important;top:auto!important;margin:0 0 10px}
+ #view-admin .admin-nav{display:none!important}
+ #view-admin .admin-task-layout,#view-admin .admin-two-column{grid-template-columns:1fr!important}
+ #view-admin .task-preview-panel{order:-1}
+ #view-admin #task-form>.quick-grid,#view-admin .quick-grid{grid-template-columns:1fr!important}
+ #view-admin #task-admin-list{display:grid!important;grid-template-columns:1fr!important;gap:12px}
+ #view-admin #task-admin-list .quick-grid{grid-template-columns:1fr 1fr!important}
+ #view-admin #task-admin-list .quick-grid .danger{grid-column:1/-1}
+ #view-admin .bulk-toolbar{display:grid!important;grid-template-columns:1fr 1fr;gap:8px}
+ #view-admin .bulk-toolbar span{grid-column:1/-1;width:auto!important}
+ #view-admin .bulk-toolbar button{width:100%!important}
+}
