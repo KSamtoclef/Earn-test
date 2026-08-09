@@ -4,7 +4,7 @@ const HISTORY_KEY='earnchat-admin-history';
 let installed=false;
 let suppressHistory=false;
 
-const labels={overview:'Overview',live:'Live users',users:'Users',tasks:'Tasks',claims:'Task claims',chats:'Chats',referrals:'Referrals',qualifications:'Qualifications',withdrawals:'Withdrawals',kyc:'KYC',payments:'Payments',configuration:'Configuration',analytics:'Analytics',audit:'Audit log'};
+const labels={overview:'Overview',live:'Live users',users:'Users',tasks:'Tasks',claims:'Task claims',chats:'Chats',referrals:'Referrals',qualifications:'Qualifications',withdrawals:'Withdrawals',kyc:'KYC',payments:'Payments',configuration:'Configuration',audit:'Audit log'};
 
 function currentTab(){
  const active=document.querySelector('#admin-tabs [data-tab].active');

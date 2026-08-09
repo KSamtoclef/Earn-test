@@ -1,11 +1,12 @@
 import fs from'node:fs';
 const read=p=>fs.readFileSync(p,'utf8');
-const app=read('assets/js/app.js'),admin=read('assets/js/admin/admin.js'),ux=read('assets/js/admin/admin-experience.js'),css=read('assets/css/admin-experience.css'),html=read('index.html');
+const app=read('assets/js/app.js'),admin=read('assets/js/admin/admin.js'),core=read('assets/js/admin/core.js'),ux=read('assets/js/admin/admin-experience.js'),css=read('assets/css/admin-experience.css'),html=read('index.html');
 const checks=[
  ['admin route state',app.includes("classList.toggle('admin-active',name==='admin')")],
  ['admin enhancer wired',admin.includes('enhanceAdminExperience')&&admin.includes('adminux-r2')],
  ['admin back',ux.includes('data-admin-back')&&ux.includes('goBack')],
  ['admin overview',ux.includes('data-admin-overview')],
+ ['analytics removed from navigation',!core.includes("'configuration','analytics','audit'")&&!core.includes("analytics:'Analytics'")&&!ux.includes("analytics:'Analytics'")],
  ['task shortcuts',ux.includes('data-admin-new-task')&&ux.includes('data-admin-current-tasks')],
  ['customer nav isolated',css.includes('body.admin-active .bottom-nav{display:none!important}')],
  ['nonsticky header',css.includes('#view-admin .app-header{position:relative!important')],
