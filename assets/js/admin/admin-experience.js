@@ -4,7 +4,7 @@ const HISTORY_KEY='earnchat-admin-history';
 let installed=false;
 let suppressHistory=false;
 
-const labels={overview:'Overview',live:'Live users',users:'Users',tasks:'Tasks',claims:'Task claims',chats:'Chats',referrals:'Referrals',qualifications:'Qualifications',withdrawals:'Withdrawals',kyc:'KYC',payments:'Payments',configuration:'Configuration',audit:'Audit log'};
+const labels={overview:'Overview',live:'Live users',users:'Users',tasks:'Sponsored Visits',claims:'Visit claims',chats:'Chats',referrals:'Referrals',qualifications:'Qualifications',withdrawals:'Withdrawals',kyc:'KYC',payments:'Payments',configuration:'Configuration',audit:'Audit log'};
 
 function currentTab(){
  const active=document.querySelector('#admin-tabs [data-tab].active');
@@ -54,7 +54,7 @@ function ensureStyles(){
  const link=document.createElement('link');
  link.id=STYLE_ID;
  link.rel='stylesheet';
- link.href='./assets/css/admin-experience.css?v=20260809-adminux-r3';
+ link.href='./assets/css/admin-experience.css?v=20260809-visits-only-r1';
  document.head.appendChild(link);
 }
 function ensureToolbar(){
@@ -67,7 +67,7 @@ function ensureToolbar(){
   toolbar=document.createElement('div');
   toolbar.id=TOOLBAR_ID;
   toolbar.className='admin-workspace-toolbar';
-  toolbar.innerHTML='<button class="secondary admin-history-back" data-admin-back type="button">← Back</button><button class="secondary admin-overview-button" data-admin-overview type="button">⌂ Overview</button><div class="admin-breadcrumb"><small>ADMIN SECTION</small><b data-admin-current>Overview</b></div><div class="admin-context-actions hidden" data-admin-task-actions><button class="secondary" data-admin-new-task type="button">＋ New task</button><button class="secondary" data-admin-current-tasks type="button">Current tasks ↓</button></div>';
+  toolbar.innerHTML='<button class="secondary admin-history-back" data-admin-back type="button">← Back</button><button class="secondary admin-overview-button" data-admin-overview type="button">⌂ Overview</button><div class="admin-breadcrumb"><small>ADMIN SECTION</small><b data-admin-current>Overview</b></div><div class="admin-context-actions hidden" data-admin-task-actions><button class="secondary" data-admin-new-task type="button">＋ New sponsored visit</button><button class="secondary" data-admin-current-tasks type="button">Current visits ↓</button></div>';
   header.appendChild(toolbar);
   toolbar.querySelector('[data-admin-back]').addEventListener('click',goBack);
   toolbar.querySelector('[data-admin-overview]').addEventListener('click',()=>{const tab=currentTab();if(tab!=='overview')pushHistory(tab);goTab('overview',{fromBack:true})});

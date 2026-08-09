@@ -10,7 +10,7 @@ function formatBase(base,state){const code=country(state),multiplier=state?.conf
 function renderLanding(state){
   const code=country(state),settings=state?.config?.settings||{},bonus=money(amount(settings.signup_bonus_ngn||2000,code,settings.kenya_multiplier||.6),code),title=$('#landing-title'),copy=$('#landing-copy'),value=$('#landing-chat'),detail=$('#landing-chat-detail'),note=$('#landing-note');
   if(title)title.innerHTML=`Get <span>${bonus}</span> when you join.<br>Then keep earning.`;
-  if(copy)copy.innerHTML='Create your free account and receive a real welcome bonus.<br><strong>Grow it through approved chats, tasks and referrals.</strong>';
+  if(copy)copy.innerHTML='Create your free account and receive a real welcome bonus.<br><strong>Grow it through approved chats, sponsored visits and referrals.</strong>';
   if(value)value.textContent=bonus;
   if(detail)detail.textContent='One-time registration welcome bonus';
   if(note)note.textContent=code==='KE'?'No payment required · KSh wallet · M-Pesa supported':'No payment required · ₦ wallet · Bank payout supported';

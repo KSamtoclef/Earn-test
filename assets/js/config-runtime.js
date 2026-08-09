@@ -26,8 +26,8 @@ export const CONFIG_DEFAULTS=Object.freeze({
     support_url:''
   },
   landing:{
-    headline:'Chat, complete tasks and earn real cash.',
-    subheadline:'Complete approved guided chats, linked activities and qualified referrals from one secure account.',
+    headline:'Chat, complete sponsored visits and earn real cash.',
+    subheadline:'Complete approved guided chats, sponsored visits and qualified referrals from one secure account.',
     cta_label:'Start earning free',
     social_proof_enabled:true,
     verified_payments_enabled:true,
@@ -55,7 +55,7 @@ export const CONFIG_DEFAULTS=Object.freeze({
     visits_enabled:true,
     default_attempt_expiry_minutes:30,
     incomplete_attempt_policy:'restart',
-    restart_required_message:'This task was opened but not completed. Restart it to begin again.',
+    restart_required_message:'This sponsored visit was opened but not completed. Restart it to begin again.',
     pending_review_message:'Submitted successfully. Your review is pending.',
     approved_message:'Approved. Your reward has been credited.',
     rejected_message:'This submission was not approved. Review the reason and try again.',
@@ -86,7 +86,7 @@ export const CONFIG_DEFAULTS=Object.freeze({
     maintenance_message:'Identity verification is temporarily unavailable.'
   },
   feature_flags:{
-    guided_chat:true,tasks:true,sponsored_visits:true,referrals:true,withdrawals:true,
+    guided_chat:true,tasks:false,sponsored_visits:true,referrals:true,withdrawals:true,
     qualifications:true,social_proof:true,member_feedback:true,kyc:true,upgrade:true,
     admin_analytics:true,public_registration:true
   }

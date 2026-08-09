@@ -1,6 +1,6 @@
 import{api}from'../api.js';
 import{renderAdmin as renderAdminCore}from'./core.js';
-import{enhanceAdminExperience}from'./admin-experience.js?v=20260809-adminux-r3';
+import{enhanceAdminExperience}from'./admin-experience.js?v=20260809-visits-only-r1';
 
 const originalUsers=api.adminUsers.bind(api);
 const pageCache=new Map();

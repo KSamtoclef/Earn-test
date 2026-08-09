@@ -2,13 +2,13 @@ const $=(selector,root=document)=>root.querySelector(selector);
 const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
 
 const FORM_CONFIG={
-  'task-form':{storage:'local',label:'Task draft'},
+  'task-form':{storage:'local',label:'Sponsored visit draft'},
   'kyc-config-form':{storage:'local',label:'KYC settings draft'},
   'mission-form':{storage:'local',label:'Qualification draft'},
   'feedback-form':{storage:'local',label:'Feedback draft'},
   'business-form':{storage:'local',label:'Business settings draft'},
   'register-form':{storage:'session',label:'Signup draft'},
-  'task-proof-field':{storage:'session',label:'Task answer draft'}
+  'task-proof-field':{storage:'session',label:'Sponsored visit answer draft'}
 };
 const BLOCKED_IDS=new Set(['register-password','login-password','payout-account','payout-name','payout-provider','kyc-reference']);
 const BLOCKED_TYPES=new Set(['password','file']);

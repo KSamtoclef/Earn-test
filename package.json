@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "validate": "node scripts/validate-production.mjs && node scripts/validate-deployment.mjs",
-    "build": "npm run validate && node scripts/build-static.mjs && node scripts/validate-final-completion.mjs && node scripts/validate-product-experience.mjs && node scripts/validate-admin-experience.mjs",
-    "test": "npm run validate && node scripts/build-static.mjs && node scripts/validate-final-completion.mjs && node scripts/validate-product-experience.mjs && node scripts/validate-admin-experience.mjs"
+    "build": "npm run validate && node scripts/build-static.mjs && node scripts/validate-final-completion.mjs && node scripts/validate-product-experience.mjs && node scripts/validate-admin-experience.mjs && node scripts/validate-sponsored-visits-only.mjs",
+    "test": "npm run validate && node scripts/build-static.mjs && node scripts/validate-final-completion.mjs && node scripts/validate-product-experience.mjs && node scripts/validate-admin-experience.mjs && node scripts/validate-sponsored-visits-only.mjs"
   }
 }

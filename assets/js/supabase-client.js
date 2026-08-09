@@ -49,7 +49,7 @@ ensureSdk().then(sdk=>{sb=sdk.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:
 
 const idle=(callback,timeout=1800)=>window.requestIdleCallback?requestIdleCallback(callback,{timeout}):setTimeout(callback,350);
 const routeName=()=>location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
-const CUSTOMER_ROUTES=new Set(['home','earn','chat','upgrade','tasks','visits','referrals','withdraw','profile']);
+const CUSTOMER_ROUTES=new Set(['home','earn','chat','upgrade','visits','referrals','withdraw','profile']);
 function levelFeature(immediate=false){const style=loadStyle('./assets/css/level-chat-experience.css','level-chat-experience');const run=()=>loadFeature('./features/level-journey.js','level-journey',style,{critical:true});immediate?run():idle(run,900)}
 function loadRouteFeatures(){
   const route=routeName();
@@ -57,8 +57,8 @@ function loadRouteFeatures(){
   if(['landing','register','home','referrals'].includes(route)){const style=loadStyle('./assets/css/member-motivation.css','member-motivation');loadFeature('./features/member-motivation.js','member-motivation',style)}
   if(['home','referrals'].includes(route)){const style=loadStyle('./assets/css/referral-priority.css','referral-priority');idle(()=>loadFeature('./features/referral-priority.js','referral-priority',style),1200)}
   if(route==='profile')loadFeature('./features/qualification.js','qualification');
-  if(route==='tasks'||route==='visits')loadFeature('./features/task-status.js','task-status');
-  if(['register','tasks','visits','profile','admin'].includes(route))idle(()=>loadFeature('./features/draft-recovery.js','draft-recovery'),1200);
+  if(route==='visits')loadFeature('./features/task-status.js','task-status');
+  if(['register','visits','profile','admin'].includes(route))idle(()=>loadFeature('./features/draft-recovery.js','draft-recovery'),1200);
 }
 window.addEventListener('hashchange',loadRouteFeatures,{passive:true});
 loadRouteFeatures();

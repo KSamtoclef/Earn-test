@@ -4,8 +4,8 @@ import{normalizeBusinessConfig}from'./config-runtime.js';
 const CONFIG_KEY='earnchat-business-config:v1';
 const $=(selector,root=document)=>root.querySelector(selector);
 const $$=(selector,root=document)=>[...root.querySelectorAll(selector)];
-const protectedRoutes=new Set(['home','earn','chat','tasks','visits','upgrade','referrals','withdraw','profile']);
-const routeFlags={earn:'guided_chat',chat:'guided_chat',tasks:'tasks',visits:'sponsored_visits',upgrade:'upgrade',referrals:'referrals',withdraw:'withdrawals'};
+const protectedRoutes=new Set(['home','earn','chat','visits','upgrade','referrals','withdraw','profile']);
+const routeFlags={earn:'guided_chat',chat:'guided_chat',visits:'sponsored_visits',upgrade:'upgrade',referrals:'referrals',withdraw:'withdrawals'};
 let config=normalizeBusinessConfig(readCachedConfig());
 let scheduled=false,taskObserver=null,adminObserver=null;
 
@@ -68,7 +68,7 @@ function enforceFixedAdminRules(){
 }
 function applyTaskPresentation(){
  const limit=Math.max(0,Number(config.tasks.featured_task_limit||0));
- for(const host of[$('#task-list'),$('#visit-list')]){
+ for(const host of[$('#visit-list')]){
   if(!host)continue;
   const cards=$$('[data-task-card]',host);
   cards.forEach((card,index)=>card.classList.toggle('hidden',limit>0&&index>=limit));
@@ -89,8 +89,8 @@ function disconnectRouteObservers(){
 function installRouteObservers(){
  disconnectRouteObservers();
  const route=document.body.dataset.route||location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
- if(route==='tasks'||route==='visits'){
-  const host=route==='visits'?$('#visit-list'):$('#task-list');
+ if(route==='visits'){
+  const host=$('#visit-list');
   if(host){taskObserver=new MutationObserver(applyTaskPresentation);taskObserver.observe(host,{childList:true,subtree:true})}
  }
  if(route==='admin'){

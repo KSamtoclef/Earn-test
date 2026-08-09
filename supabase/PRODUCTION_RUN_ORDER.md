@@ -23,6 +23,10 @@ Optional paused starter tasks:
 
 11. `earnchat_starter_tasks_seed.sql`
 
+Current product cleanup (run after all files above):
+
+12. `earnchat_sponsored_visits_only_20260809.sql`
+
 The final 2026-08-02 completion migrations add:
 
 - authoritative NGN/KES profile consistency;
