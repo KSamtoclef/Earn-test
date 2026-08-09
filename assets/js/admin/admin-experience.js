@@ -54,7 +54,7 @@ function ensureStyles(){
  const link=document.createElement('link');
  link.id=STYLE_ID;
  link.rel='stylesheet';
- link.href='./assets/css/admin-experience.css?v=20260809-adminux-r2';
+ link.href='./assets/css/admin-experience.css?v=20260809-adminux-r3';
  document.head.appendChild(link);
 }
 function ensureToolbar(){
