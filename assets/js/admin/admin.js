@@ -1,5 +1,6 @@
 import{api}from'../api.js';
-import{renderAdmin}from'./core.js';
+import{renderAdmin as renderAdminCore}from'./core.js';
+import{enhanceAdminExperience}from'./admin-experience.js?v=20260809-adminux-r1';
 
 const originalUsers=api.adminUsers.bind(api);
 const pageCache=new Map();
@@ -13,5 +14,11 @@ api.adminUsers=async(limit=50,offset=0)=>{
  pageCache.set(key,{data,at:Date.now()});
  return data;
 };
+
+async function renderAdmin(){
+ const result=await renderAdminCore();
+ enhanceAdminExperience();
+ return result;
+}
 
 export{renderAdmin};
