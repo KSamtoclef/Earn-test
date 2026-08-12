@@ -21,8 +21,15 @@ function ensureStyles(){
 }
 
 function cleanGuidedSessionLanguage(){
+ const earnHeader=$('#view-earn .app-header small');
+ if(earnHeader)earnHeader.textContent='Structured guided sessions with clear limits and approval.';
  const subtitle=$('#chat-subtitle');
- if(subtitle)subtitle.textContent='Guided session';
+ if(subtitle){
+  const parts=subtitle.textContent.split('·').map(part=>part.trim()).filter(Boolean);
+  subtitle.textContent=parts.length>1?`Guided Session · ${parts.slice(1).join(' · ')}`:'Guided session';
+ }
+ const activeTitle=$('#chat-title');
+ if(activeTitle&&legacyNames.has(activeTitle.textContent.trim()))activeTitle.textContent=legacyNames.get(activeTitle.textContent.trim());
  for(const card of $$('.partner-card')){
   const title=$('h3',card);
   if(title&&legacyNames.has(title.textContent.trim()))title.textContent=legacyNames.get(title.textContent.trim());
@@ -38,6 +45,10 @@ function cleanGuidedSessionLanguage(){
  if(chatPerson){
   const small=$('small',chatPerson);
   if(small)small.textContent='Guided session';
+ }
+ const firstMessage=$('#chat-messages .msg.them');
+ if(firstMessage&&/^Hi,\s*I[’']m\s+/i.test(firstMessage.textContent)){
+  firstMessage.textContent=firstMessage.textContent.replace(/^Hi,\s*I[’']m\s+[^.]+\.\s*/i,'Welcome. ');
  }
 }
 
