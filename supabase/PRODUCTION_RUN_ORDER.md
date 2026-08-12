@@ -21,11 +21,29 @@ Run these idempotent upgrades in this exact order:
 
 Optional paused starter tasks:
 
-11. `earnchat_starter_tasks_seed.sql`
+- `earnchat_starter_tasks_seed.sql`
 
 Current product cleanup (run after all files above):
 
-12. `earnchat_sponsored_visits_only_20260809.sql`
+- `earnchat_sponsored_visits_only_20260809.sql`
+
+## 2026-08-12 professional upgrade
+
+For the existing Earn Chat database that already has the production chain above, run **one additional migration only**:
+
+1. `earnchat_professional_upgrade_20260812.sql`
+
+This migration is additive. It keeps existing user, payment, KYC, task, chat, referral and ledger records. It adds configurable withdrawal eligibility, a server-authoritative withdrawal-readiness RPC, registration-based referral counting for withdrawal eligibility, and a versioned withdrawal core while preserving referral reward qualification as a separate process.
+
+Default professional-upgrade settings are:
+
+- minimum account age: 5 days;
+- required direct referrals: 5;
+- referral counting rule: registered account through the referral link;
+- KYC required for withdrawal: enabled;
+- legacy default level withdrawal minimums become ₦20,000 only when those level values are still untouched legacy defaults.
+
+All four eligibility controls remain editable in Admin → Configuration → Withdrawals. Level withdrawal amounts remain editable in Admin → Configuration → Levels. Existing custom level minimums are preserved by the migration.
 
 The final 2026-08-02 completion migrations add:
 
@@ -51,13 +69,13 @@ The customer runtime additionally applies:
 - customer navigation controlled by feature flags;
 - a full maintenance screen for protected customer routes.
 
-Do not expose the Admin configuration controls until steps 3 through 8 have succeeded. The browser has safe fallbacks, but monetary, qualification, maintenance and security rules become authoritative only after the database functions are installed.
+Do not expose the Admin configuration controls until the required database functions have succeeded. The browser has safe fallbacks, but monetary, qualification, maintenance and security rules become authoritative only after the database functions are installed.
 
-The final configuration row should show:
+After the professional upgrade, the configuration row should show a version beginning with:
 
 ```text
-version = 20260802-final-completion-r2
-configuration_version >= 1
+version = 20260812-professional-upgrade-r1
+configuration_version >= 2
 ```
 
 Verification requirements:
@@ -76,6 +94,9 @@ Verification requirements:
 - maintenance mode blocks protected earning operations;
 - disabled withdrawal methods are rejected by the server;
 - the configured maximum open withdrawal count is enforced;
+- withdrawal account-age, referral-count and KYC requirements are enforced on the server;
+- registration-mode referral counting uses genuine direct referral rows and excludes disqualified referrals;
+- referral reward qualification still uses its separate activity requirements;
 - disabled KYC and missing required references are rejected by the server;
 - only trusted Admin accounts can mutate configuration;
 - configuration updates produce Admin audit entries;
@@ -101,8 +122,12 @@ Run:
 7. `earnchat_dynamic_operations_contract_20260801.sql`
 8. `earnchat_final_completion_20260802.sql`
 9. `earnchat_final_task_runtime_20260802.sql`
-10. `earnchat_configuration_control_verify_20260801.sql`
-11. `earnchat_production_verify.sql`
+10. `earnchat_admin_runtime_unification_20260802.sql`
+11. `earnchat_chat_timing_controls_20260809.sql`
+12. `earnchat_sponsored_visits_only_20260809.sql`
+13. `earnchat_professional_upgrade_20260812.sql`
+14. `earnchat_configuration_control_verify_20260801.sql`
+15. `earnchat_production_verify.sql`
 
 Do not run removed certification migrations or older multi-file production packages.
 
