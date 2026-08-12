@@ -77,12 +77,29 @@ function referralExplanation(){
  const box=$('#referral-explainer');
  if(box)box.innerHTML='<h3>How referrals count</h3><p>A genuine signup can count toward withdrawal immediately. Referral rewards remain separate and are credited only after the configured qualification activity.</p>';
 }
-function refresh(){ensureStyles();formatProfileStatus();referralExplanation();void refreshWithdrawalReadiness()}
+function enforcePostSessionActions(){
+ const ready=$('#chat-ready');if(!ready)return;
+ const buttons=[...ready.querySelectorAll('[data-chat-next]')];if(!buttons.length)return;
+ for(const button of buttons){
+  const route=button.dataset.chatNext;
+  if(route==='visits'){button.textContent='Sponsored visits';button.className='primary'}
+  else if(route==='referrals'){button.textContent='Referrals';button.className='secondary'}
+  else button.remove();
+ }
+}
+function watchPostSessionActions(){
+ const ready=$('#chat-ready');if(!ready||ready.dataset.postSessionWatch==='1')return;
+ ready.dataset.postSessionWatch='1';
+ new MutationObserver(enforcePostSessionActions).observe(ready,{childList:true,subtree:true});
+ enforcePostSessionActions();
+}
+function refresh(){ensureStyles();formatProfileStatus();referralExplanation();watchPostSessionActions();enforcePostSessionActions();void refreshWithdrawalReadiness()}
 function refreshSoon(){requestAnimationFrame(refresh);setTimeout(refresh,120)}
 
 window.addEventListener('earnchat:member-state',refreshSoon);
 window.addEventListener('earnchat:config-updated',refreshSoon);
 window.addEventListener('earnchat:admin-config-saved',refreshSoon);
 document.addEventListener('earnchat:route-view',refreshSoon);
+document.addEventListener('earnchat:chat-completion-requested',()=>setTimeout(enforcePostSessionActions,0));
 document.addEventListener('click',event=>{if(event.target.closest('#wallet-work,#wallet-ref')){setTimeout(()=>void refreshWithdrawalReadiness(),40);setTimeout(()=>void refreshWithdrawalReadiness(),220)}});
 document.addEventListener('DOMContentLoaded',refreshSoon);
