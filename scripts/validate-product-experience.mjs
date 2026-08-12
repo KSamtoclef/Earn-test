@@ -8,7 +8,7 @@ if(!fail.length){
   if(!html.includes(token))fail.push(`Source HTML missing ${token}`);
   if(!built.includes(token))fail.push(`Built HTML missing ${token}`);
  }
- for(const token of['TRANSPARENT REWARDS','WORK-BASED LEVELS','How a referral becomes qualified','Sponsored visits','Earn your next level','earnchat:member-state','earnchat:config-updated'])if(!js.includes(token))fail.push(`Experience runtime missing ${token}`);
+ for(const token of['TRANSPARENT REWARDS','WORK-BASED LEVELS','Referral rewards','Sponsored visits','Earn your next level','earnchat:member-state','earnchat:config-updated'])if(!js.includes(token))fail.push(`Experience runtime missing ${token}`);
  for(const token of['reward-flow','level-path','member-clarity-card','activity-guide','referral-explainer','earned-upgrade-banner'])if(!css.includes(token))fail.push(`Experience stylesheet missing ${token}`);
  for(const token of['@media(min-width:1000px)','.view:not(.public-view){padding:30px 42px 60px 138px}','width:min(100%,1280px)','#view-home>.container{display:grid','#task-list,#visit-list{grid-template-columns:repeat(2','.bottom-nav{left:24px','#view-withdraw #withdraw-form{display:grid','#view-admin>.container','#view-admin .admin-task-layout','#view-admin .kyc-config-grid'])if(!css.includes(token))fail.push(`Desktop experience stylesheet missing ${token}`);
  if(js.includes('observe(document.documentElement'))fail.push('Experience runtime must not observe the full document');
