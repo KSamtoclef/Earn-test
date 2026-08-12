@@ -4,7 +4,7 @@ const read=p=>fs.readFileSync(p,'utf8');
 for(const p of['index.html','assets/css/product-experience.css','assets/js/product-experience.js','public/index.html','public/assets/css/product-experience.css','public/assets/js/product-experience.js'])if(!fs.existsSync(p))fail.push(`Missing ${p}`);
 if(!fail.length){
  const html=read('index.html'),built=read('public/index.html'),js=read('assets/js/product-experience.js'),css=read('assets/css/product-experience.css');
- for(const token of['product-experience.css?v=20260809-visits-only-r1','product-experience.js?v=20260809-visits-only-r1']){
+ for(const token of['product-experience.css?v=20260812-professional-r3','product-experience.js?v=20260812-professional-r3']){
   if(!html.includes(token))fail.push(`Source HTML missing ${token}`);
   if(!built.includes(token))fail.push(`Built HTML missing ${token}`);
  }
