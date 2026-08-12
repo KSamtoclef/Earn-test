@@ -11,6 +11,15 @@ const legacyNames=new Map([
 ]);
 let readinessToken=0;
 
+function ensureStyles(){
+ if($('#earnchat-professional-upgrade-css'))return;
+ const link=document.createElement('link');
+ link.id='earnchat-professional-upgrade-css';
+ link.rel='stylesheet';
+ link.href='./assets/css/professional-upgrade.css?v=20260812-r1';
+ document.head.appendChild(link);
+}
+
 function cleanGuidedSessionLanguage(){
  const subtitle=$('#chat-subtitle');
  if(subtitle)subtitle.textContent='Guided session';
@@ -122,6 +131,7 @@ function referralExplanation(){
 }
 
 function refresh(){
+ ensureStyles();
  cleanPublicCopy();
  cleanGuidedSessionLanguage();
  referralExplanation();
