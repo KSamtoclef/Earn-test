@@ -18,7 +18,7 @@ const checks=[
  ['database ends non-Visit items',migration.includes("where category<>'Visit' and status<>'ended'")],
  ['database blocks non-Visit creation',migration.includes('earnchat_enforce_sponsored_visit_only')&&migration.includes("new.category is distinct from 'Visit'")],
  ['historical tables preserved',!migration.includes('drop table')&&!migration.includes('delete from public.earnchat_task_claims')],
- ['release cache bust',html.includes('20260809-visits-only-r1')&&loader.includes("RELEASE_VERSION='20260809-visits-only-r1'")]
+ ['release cache bust',html.includes('20260812-professional-r3')&&loader.includes("RELEASE_VERSION='20260812-professional-r3'")]
 ];
 const failed=checks.filter(([,ok])=>!ok);
 for(const[name,ok]of checks)console.log(ok?'PASS':'FAIL',name);

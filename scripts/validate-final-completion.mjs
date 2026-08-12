@@ -21,9 +21,9 @@ if(!failures.length){
  const unifiedSql=read('supabase/earnchat_admin_runtime_unification_20260802.sql');
  const runOrder=read('supabase/PRODUCTION_RUN_ORDER.md');
 
- requireToken(html,'final-completion.js?v=20260809-visits-only-r1','Completion runtime is not loaded');
- requireToken(html,'product-experience.js?v=20260809-visits-only-r1','Product experience runtime is not loaded');
- requireToken(html,'product-experience.css?v=20260809-visits-only-r1','Product experience stylesheet is not loaded');
+ requireToken(html,'final-completion.js?v=20260812-professional-r3','Completion runtime is not loaded');
+ requireToken(html,'product-experience.js?v=20260812-professional-r3','Product experience runtime is not loaded');
+ requireToken(html,'product-experience.css?v=20260812-professional-r3','Product experience stylesheet is not loaded');
  for(const token of['id="preview-balance">—','id="landing-chat">—','id="home-work">—','id="withdraw-available">—'])requireToken(html,token,'Country-neutral first paint missing');
  forbidToken(html,'id="preview-balance">₦','Kenyan first paint can expose Naira');
 
@@ -40,9 +40,6 @@ if(!failures.length){
  for(const token of['earnchat_final_completion_20260802.sql','earnchat_final_task_runtime_20260802.sql','earnchat_admin_runtime_unification_20260802.sql'])requireToken(runOrder,token,'Final SQL run order missing');
 }
 
-if(failures.length){
- console.error(`Final completion validation failed with ${failures.length} issue(s):\n- ${failures.join('\n- ')}`);
- process.exit(1);
-}
+if(failures.length){console.error(`Final completion validation failed with ${failures.length} issue(s):\n- ${failures.join('\n- ')}`);process.exit(1)}
 console.log('Earn Chat final completion validation passed.');
 console.log('Verified country-safe first paint, country multipliers, Admin propagation, route-scoped runtime updates, presence timing, referral conversion, task expiry and final SQL run order.');

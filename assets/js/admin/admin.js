@@ -1,6 +1,7 @@
 import{api}from'../api.js';
 import{renderAdmin as renderAdminCore}from'./core.js';
-import{enhanceAdminExperience}from'./admin-experience.js?v=20260809-visits-only-r1';
+import{enhanceAdminExperience}from'./admin-experience.js?v=20260812-professional-r3';
+import{installProfessionalAdminControls}from'./professional-controls.js';
 
 const originalUsers=api.adminUsers.bind(api);
 const pageCache=new Map();
@@ -18,6 +19,7 @@ api.adminUsers=async(limit=50,offset=0)=>{
 async function renderAdmin(){
  const result=await renderAdminCore();
  enhanceAdminExperience();
+ installProfessionalAdminControls();
  return result;
 }
 
