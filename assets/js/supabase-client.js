@@ -9,7 +9,7 @@ function releasePublicStartupLoader(){
   const route=location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
   if(!['landing','register','login'].includes(route))return;
   const release=()=>document.getElementById('startup-loader')?.classList.add('hidden');
-  setTimeout(release,2500);
+  setTimeout(release,300);
 }
 releasePublicStartupLoader();
 
