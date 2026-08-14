@@ -1,6 +1,18 @@
 import{SUPABASE_URL,SUPABASE_ANON_KEY}from'./app-config.js';
 
 export const RELEASE_VERSION='20260812-professional-r3';
+
+// The public homepage must never remain behind the startup screen while the
+// account service is initializing. Protected routes still use the normal auth
+// and Supabase readiness flow.
+function releasePublicStartupLoader(){
+  const route=location.hash.replace(/^#\/?/,'').split('?')[0]||'landing';
+  if(!['landing','register','login'].includes(route))return;
+  const release=()=>document.getElementById('startup-loader')?.classList.add('hidden');
+  setTimeout(release,2500);
+}
+releasePublicStartupLoader();
+
 const stylePromises=new Map(),modulePromises=new Map();
 
 function loadStyle(href,key){if(stylePromises.has(key))return stylePromises.get(key);const promise=new Promise(resolve=>{const existing=document.querySelector(`link[data-style="${key}"]`);if(existing){if(existing.sheet)return resolve(existing);const done=()=>resolve(existing);existing.addEventListener('load',done,{once:true});existing.addEventListener('error',done,{once:true});setTimeout(done,1200);return}const link=document.createElement('link');const done=()=>resolve(link);link.rel='stylesheet';link.href=`${href}?v=${RELEASE_VERSION}`;link.dataset.style=key;link.addEventListener('load',done,{once:true});link.addEventListener('error',()=>{console.warn(`Earn Chat stylesheet failed: ${key}`);done()},{once:true});document.head.appendChild(link);setTimeout(done,1200)});stylePromises.set(key,promise);return promise}
