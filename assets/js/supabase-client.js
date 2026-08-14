@@ -13,6 +13,21 @@ function releasePublicStartupLoader(){
 }
 releasePublicStartupLoader();
 
+function warmConnection(url){
+  try{
+    const origin=new URL(url).origin;
+    if(document.head.querySelector(`link[data-earnchat-preconnect="${origin}"]`))return;
+    const link=document.createElement('link');
+    link.rel='preconnect';
+    link.href=origin;
+    link.crossOrigin='anonymous';
+    link.dataset.earnchatPreconnect=origin;
+    document.head.appendChild(link);
+  }catch{}
+}
+warmConnection(SUPABASE_URL);
+warmConnection('https://cdn.jsdelivr.net');
+
 const stylePromises=new Map(),modulePromises=new Map();
 
 function loadStyle(href,key){if(stylePromises.has(key))return stylePromises.get(key);const promise=new Promise(resolve=>{const existing=document.querySelector(`link[data-style="${key}"]`);if(existing){if(existing.sheet)return resolve(existing);const done=()=>resolve(existing);existing.addEventListener('load',done,{once:true});existing.addEventListener('error',done,{once:true});setTimeout(done,1200);return}const link=document.createElement('link');const done=()=>resolve(link);link.rel='stylesheet';link.href=`${href}?v=${RELEASE_VERSION}`;link.dataset.style=key;link.addEventListener('load',done,{once:true});link.addEventListener('error',()=>{console.warn(`Earn Chat stylesheet failed: ${key}`);done()},{once:true});document.head.appendChild(link);setTimeout(done,1200)});stylePromises.set(key,promise);return promise}
