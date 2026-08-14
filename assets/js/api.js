@@ -101,6 +101,19 @@ async function mutateAdmin(name,args={},options={}){
   return result;
 }
 
+// These tables are member/admin resources. They were previously queried before an
+// authenticated session existed, producing repeated 401 requests during startup.
+// Keep the existing queries unchanged for authenticated users, but avoid making
+// them at all until Supabase confirms a session. No RLS, schema, or data changes.
+async function memberOnlyList(table,columns,filterColumn,filterValue,orderColumn,limit){
+  const owner=await sessionUserId();
+  if(!owner)return[];
+  let query=select(table,columns);
+  if(filterColumn)query=query.eq(filterColumn,filterValue);
+  if(orderColumn)query=query.order(orderColumn,{ascending:false});
+  if(limit)query=query.limit(limit);
+  return unwrap(await withTimeout(query,10000,'Supabase request'))||[];
+}
 
 export const api={
  session:async()=>unwrap(await sb.auth.getSession()),
@@ -114,8 +127,8 @@ export const api={
  peekBusiness:()=>configCache,
  refreshBusiness:()=>businessConfig(true),
  invalidateBusiness:invalidateBusinessConfig,
- payments:async()=>unwrap(await select('earnchat_payment_activity','masked_name,country_code,amount,currency,payout_method,paid_at').eq('is_visible',true).eq('is_verified',true).order('paid_at',{ascending:false}).limit(2)),
- feedback:async()=>unwrap(await select('earnchat_member_feedback','quote,country_code').eq('is_visible',true).eq('verified_paid_member',true).order('created_at',{ascending:false}).limit(3)),
+ payments:async()=>memberOnlyList('earnchat_payment_activity','masked_name,country_code,amount,currency,payout_method,paid_at','is_visible',true,'paid_at',2),
+ feedback:async()=>memberOnlyList('earnchat_member_feedback','quote,country_code','is_visible',true,'created_at',3),
  tasks:async()=>rpc('list_earnchat_tasks'),
  startTask:async id=>rpc('start_earnchat_task',{p_task:id}),
  cancelTask:async id=>mutateMember('cancel_earnchat_task_claim',{p_claim:id}),
