@@ -111,7 +111,17 @@ function installStyles(){
  document.head.append(style);
 }
 
-prepareCountry();neutralizeFirstPaint();installStyles();
+// Public pages should not be held behind the authenticated Supabase startup check.
+// Protected routes keep the existing loader behavior until auth/profile state is ready.
+function installPublicStartupFailsafe(){
+ const route=(location.hash.replace(/^#\/?/,'').split('?')[0]||'landing');
+ if(!['landing','register','login'].includes(route))return;
+ const release=()=>document.getElementById('startup-loader')?.classList.add('hidden');
+ window.addEventListener('load',()=>setTimeout(release,250),{once:true,passive:true});
+ setTimeout(release,2500);
+}
+
+prepareCountry();neutralizeFirstPaint();installStyles();installPublicStartupFailsafe();
 window.addEventListener('hashchange',scheduleRouteRefresh,{passive:true});
 window.addEventListener('pageshow',scheduleRouteRefresh,{passive:true});
 window.addEventListener('earnchat:config-updated',event=>{if(event.detail?.config)config=normalizeBusinessConfig(event.detail.config);scheduleRouteRefresh()});
